@@ -23,6 +23,13 @@ export default function RootLayout() {
         }}
       />
       <Stack.Screen
+        name="login"
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+        }}
+      />
+      <Stack.Screen
         name="tabs"
         options={{
           headerShown: false,
