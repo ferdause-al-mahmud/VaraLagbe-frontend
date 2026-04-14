@@ -14,9 +14,9 @@ export default function SplashScreen() {
       useNativeDriver: false,
     }).start();
 
-    // Navigate to home after 3 seconds
+    // Navigate to login after 3 seconds
     const timer = setTimeout(() => {
-      router.replace("tabs/home");
+      router.replace("login");
     }, 3500);
 
     return () => clearTimeout(timer);
