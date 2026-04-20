@@ -2,17 +2,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+
+const API_BASE_URL = "http://localhost:5000";
 
 export default function SignupScreen() {
   const colorScheme = useColorScheme();
@@ -31,7 +33,6 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
-    // Validation
     if (!fullName || !email || !phone || !password || !confirmPassword) {
       Alert.alert("Validation Error", "Please fill in all required fields");
       return;
@@ -44,14 +45,6 @@ export default function SignupScreen() {
 
     if (password.length < 8) {
       Alert.alert("Validation Error", "Password must be at least 8 characters");
-      return;
-    }
-
-    if (!nidFile) {
-      Alert.alert(
-        "Validation Error",
-        "Please upload your National ID for verification",
-      );
       return;
     }
 
@@ -79,9 +72,30 @@ export default function SignupScreen() {
     }
 
     setIsLoading(true);
+
     try {
-      // TODO: Implement signup API call
-      // const response = await signupUser({ fullName, email, phone, password, nid: nidFile });
+      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          password,
+          confirmPassword,
+          agreed,
+          nidFile: nidFile || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Signup failed. Please try again.");
+      }
+
       Alert.alert("Success", "Account created successfully!", [
         {
           text: "OK",
@@ -89,7 +103,7 @@ export default function SignupScreen() {
         },
       ]);
     } catch (error) {
-      Alert.alert("Error", "Signup failed. Please try again.");
+      Alert.alert("Error", error.message || "Signup failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +114,6 @@ export default function SignupScreen() {
   };
 
   const handleNIDUpload = () => {
-    // TODO: Implement file picker
     Alert.alert("Upload NID", "File picker implementation coming soon");
   };
 
@@ -110,7 +123,6 @@ export default function SignupScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <MaterialCommunityIcons
@@ -127,7 +139,6 @@ export default function SignupScreen() {
           </Text>
         </View>
 
-        {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View
             style={[
@@ -150,14 +161,12 @@ export default function SignupScreen() {
           </Text>
         </View>
 
-        {/* Form Container */}
         <View
           style={[
             styles.formContainer,
             { backgroundColor: colors.cardBackground },
           ]}
         >
-          {/* Full Name Input */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Full Name
@@ -180,14 +189,13 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="John Doe"
-                placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
+                placeholderTextColor="#999"
                 value={fullName}
                 onChangeText={setFullName}
               />
             </View>
           </View>
 
-          {/* Email Input */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Email Address
@@ -210,7 +218,7 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="name@example.com"
-                placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
+                placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -219,7 +227,6 @@ export default function SignupScreen() {
             </View>
           </View>
 
-          {/* Phone Input */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Phone Number
@@ -242,7 +249,7 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="01XXXXXXXXX"
-                placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
+                placeholderTextColor="#999"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
@@ -250,7 +257,6 @@ export default function SignupScreen() {
             </View>
           </View>
 
-          {/* Password Input */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Password</Text>
             <View
@@ -271,7 +277,7 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
+                placeholderTextColor="#999"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -289,7 +295,6 @@ export default function SignupScreen() {
             </View>
           </View>
 
-          {/* Confirm Password Input */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
               Confirm Password
@@ -312,7 +317,7 @@ export default function SignupScreen() {
               <TextInput
                 style={[styles.input, { color: colors.text }]}
                 placeholder="••••••••"
-                placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
+                placeholderTextColor="#999"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
@@ -330,10 +335,9 @@ export default function SignupScreen() {
             </View>
           </View>
 
-          {/* NID Verification */}
           <View style={styles.formGroup}>
             <Text style={[styles.label, { color: colors.text }]}>
-              National ID (NID) Verification
+              National ID (NID) Verification Optional
             </Text>
             <TouchableOpacity
               style={[
@@ -351,7 +355,9 @@ export default function SignupScreen() {
                 color={colors.tint}
               />
               <Text style={[styles.nidUploadTitle, { color: colors.text }]}>
-                {nidFile ? nidFile : "Upload NID for Verification"}
+                {nidFile
+                  ? nidFile.name || String(nidFile)
+                  : "Upload NID for Verification (Optional)"}
               </Text>
               <Text
                 style={[
@@ -359,12 +365,11 @@ export default function SignupScreen() {
                   { color: colors.text, opacity: 0.6 },
                 ]}
               >
-                JPEG, PNG or PDF (Max 5MB)
+                JPEG, PNG or PDF (Optional)
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Terms & Conditions */}
           <View style={styles.termsContainer}>
             <TouchableOpacity
               style={[
@@ -392,7 +397,6 @@ export default function SignupScreen() {
             </Text>
           </View>
 
-          {/* Security Notice */}
           <View
             style={[
               styles.securityNotice,
@@ -409,7 +413,6 @@ export default function SignupScreen() {
             </Text>
           </View>
 
-          {/* Sign Up Button */}
           <TouchableOpacity
             style={[styles.signUpButton, { backgroundColor: colors.tint }]}
             onPress={handleSignUp}
@@ -420,12 +423,10 @@ export default function SignupScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* OR Login Text */}
           <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>
             OR LOGIN INSTEAD
           </Text>
 
-          {/* Login Button */}
           <TouchableOpacity
             style={[
               styles.loginButton,
@@ -443,7 +444,6 @@ export default function SignupScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer Badges */}
         <View style={styles.footerBadges}>
           <View style={styles.badge}>
             <MaterialCommunityIcons
