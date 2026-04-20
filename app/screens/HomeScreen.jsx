@@ -7,50 +7,15 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
+import { useEffect, useState } from "react";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 
-const propertyData = [
-  {
-    id: "1",
-    title: "Luxury 3BHK Apartment",
-    location: "5 Gulshan, Dhaka",
-    price: "45,000",
-    rating: "4.8",
-    reviews: "234",
-    image: require("../../assets/images/home1.png"),
-    status: "Available Now",
-    beds: "3",
-    baths: "2",
-  },
-  {
-    id: "2",
-    title: "Premium Studio Room",
-    location: "2 Banani, Dhaka",
-    price: "18,500",
-    rating: "4.7",
-    reviews: "156",
-    image: require("../../assets/images/home2.png"),
-    status: "Available Now",
-    beds: "Studio",
-    baths: "1",
-  },
-  {
-    id: "3",
-    title: "Modern Family House",
-    location: "10 Dhanmondi, Dhaka",
-    price: "32,000",
-    rating: "4.9",
-    reviews: "189",
-    image: require("../../assets/images/home3.png"),
-    status: "Available Soon",
-    beds: "4",
-    baths: "3",
-  },
-];
+const API_BASE_URL = "http://localhost:5000";
 
 const filters = [
   { id: "1", name: "Flats", icon: "home" },
@@ -63,6 +28,48 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isDark = colorScheme === "dark";
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/properties`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch properties");
+      }
+      const data = await response.json();
+
+      // Transform API data to component format
+      const transformedData = data.data.map((property) => ({
+        id: property._id || property.id,
+        title: property.title,
+        location: `${property.location.area}, ${property.location.city}`,
+        price: property.price.monthly_rent.toLocaleString(),
+        rating: property.rating?.toString() || "4.5",
+        reviews: property.reviews?.toString() || "0",
+        image: property.images?.[0]
+          ? { uri: property.images[0] }
+          : require("../../assets/images/home1.png"),
+        status: property.availability,
+        beds: property.specs?.bedrooms?.toString() || "N/A",
+        baths: property.specs?.bathrooms?.toString() || "N/A",
+      }));
+
+      setProperties(transformedData);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching properties:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const PropertyCard = ({ item }) => (
     <TouchableOpacity
@@ -245,9 +252,31 @@ export default function HomeScreen() {
 
         {/* Property Cards */}
         <View style={styles.propertiesContainer}>
-          {propertyData.map((property) => (
-            <PropertyCard key={property.id} item={property} />
-          ))}
+          {loading ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={colors.tint} />
+            </View>
+          ) : error ? (
+            <View style={styles.centerContainer}>
+              <ThemedText style={styles.errorText}>
+                Error loading properties
+              </ThemedText>
+              <TouchableOpacity
+                onPress={fetchProperties}
+                style={[styles.retryButton, { backgroundColor: colors.tint }]}
+              >
+                <ThemedText style={{ color: "#fff" }}>Retry</ThemedText>
+              </TouchableOpacity>
+            </View>
+          ) : properties.length > 0 ? (
+            properties.map((property) => (
+              <PropertyCard key={property.id} item={property} />
+            ))
+          ) : (
+            <View style={styles.centerContainer}>
+              <ThemedText>No properties found</ThemedText>
+            </View>
+          )}
         </View>
       </ScrollView>
     </ThemedView>
@@ -449,6 +478,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    centerContainer: {
+      justifyContent: "center",
+      alignItems: "center",
+      paddingVertical: 40,
+    },
+    errorText: {
+      fontSize: 14,
+      marginBottom: 16,
+      color: "#d32f2f",
+    },
+    retryButton: {
+      paddingHorizontal: 24,
+      paddingVertical: 10,
+      borderRadius: 8,
+      marginTop: 8,
+    },
   },
   price: {
     fontSize: 16,
