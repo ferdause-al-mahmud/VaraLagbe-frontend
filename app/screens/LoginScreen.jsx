@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,10 +10,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+
+const API_BASE_URL = "http://localhost:5000";
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
@@ -24,7 +24,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [nidFile, setNidFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -33,15 +32,6 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!nidFile) {
-      Alert.alert(
-        "Validation Error",
-        "Please upload your National ID for verification"
-      );
-      return;
-    }
-
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert("Validation Error", "Please enter a valid email address");
@@ -50,16 +40,27 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     try {
-      // TODO: Implement login API call
-      // const response = await loginUser({ email, password, nid: nidFile });
-      Alert.alert("Success", "Login successful!", [
-        {
-          text: "OK",
-          onPress: () => router.replace("/tabs"),
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ]);
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert("Login Failed", data.message || "Login failed. Please try again.");
+        return;
+      }
+
+      router.replace("/tabs");
     } catch (error) {
-      Alert.alert("Error", "Login failed. Please try again.");
+      Alert.alert("Error", error.message || "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -73,18 +74,12 @@ export default function LoginScreen() {
     router.push("/forgot-password");
   };
 
-  const handleNIDUpload = () => {
-    // TODO: Implement file picker
-    Alert.alert("Upload NID", "File picker implementation coming soon");
-  };
-
   return (
     <ThemedView style={styles.container}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <MaterialCommunityIcons
@@ -93,18 +88,16 @@ export default function LoginScreen() {
               color={colors.text}
             />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            Login / Sign Up
-          </Text>
-          <Text style={[styles.brandTitle, { color: colors.tint }]}>
-            VaraLagbe
-          </Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Login / Sign Up</Text>
+          <Text style={[styles.brandTitle, { color: colors.tint }]}>VaraLagbe</Text>
         </View>
 
-        {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View
-            style={[styles.securityBadge, { backgroundColor: colors.cardBackground }]}
+            style={[
+              styles.securityBadge,
+              { backgroundColor: colors.cardBackground },
+            ]}
           >
             <MaterialCommunityIcons
               name="shield-check"
@@ -112,31 +105,28 @@ export default function LoginScreen() {
               color={colors.tint}
             />
           </View>
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            Welcome Back
-          </Text>
-          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>Welcome Back</Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}> 
             Securely access the most trusted property rental platform in
             Bangladesh.
           </Text>
         </View>
 
-        {/* Form Container */}
         <View
           style={[
             styles.formContainer,
             { backgroundColor: colors.cardBackground },
           ]}
         >
-          {/* Email Input */}
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              Email Address
-            </Text>
+            <Text style={[styles.label, { color: colors.text }]}>Email Address</Text>
             <View
               style={[
                 styles.inputContainer,
-                { backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
               ]}
             >
               <MaterialCommunityIcons
@@ -157,22 +147,20 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* Password Input */}
           <View style={styles.formGroup}>
             <View style={styles.passwordHeader}>
-              <Text style={[styles.label, { color: colors.text }]}>
-                Password
-              </Text>
+              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
               <TouchableOpacity onPress={handleForgotPassword}>
-                <Text style={[styles.forgotLink, { color: colors.tint }]}>
-                  Forgot?
-                </Text>
+                <Text style={[styles.forgotLink, { color: colors.tint }]}>Forgot?</Text>
               </TouchableOpacity>
             </View>
             <View
               style={[
                 styles.inputContainer,
-                { backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
               ]}
             >
               <MaterialCommunityIcons
@@ -183,7 +171,7 @@ export default function LoginScreen() {
               />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="••••••••"
+                placeholder="********"
                 placeholderTextColor={colorScheme === "dark" ? "#999" : "#999"}
                 value={password}
                 onChangeText={setPassword}
@@ -202,38 +190,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          {/* NID Verification */}
-          <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              National ID (NID) Verification
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.nidUploadBox,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-              onPress={handleNIDUpload}
-            >
-              <MaterialCommunityIcons
-                name="id-card"
-                size={40}
-                color={colors.tint}
-              />
-              <Text style={[styles.nidUploadTitle, { color: colors.text }]}>
-                {nidFile ? nidFile : "Upload NID for Verification"}
-              </Text>
-              <Text
-                style={[
-                  styles.nidUploadSubtext,
-                  { color: colors.text, opacity: 0.6 },
-                ]}
-              >
-                JPEG, PNG or PDF (Max 5MB)
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Security Notice */}
           <View
             style={[
               styles.securityNotice,
@@ -245,12 +201,11 @@ export default function LoginScreen() {
               size={20}
               color={colors.tint}
             />
-            <Text style={[styles.securityText, { color: colors.text }]}>
+            <Text style={[styles.securityText, { color: colors.text }]}> 
               YOUR DATA IS ENCRYPTED AND HANDLED SECURELY
             </Text>
           </View>
 
-          {/* Login Button */}
           <TouchableOpacity
             style={[styles.loginButton, { backgroundColor: colors.tint }]}
             onPress={handleLogin}
@@ -261,12 +216,8 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* OR Join Us Text */}
-          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>
-            OR JOIN US
-          </Text>
+          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>OR JOIN US</Text>
 
-          {/* Sign Up Button */}
           <TouchableOpacity
             style={[
               styles.signUpButton,
@@ -278,13 +229,10 @@ export default function LoginScreen() {
             ]}
             onPress={handleSignUp}
           >
-            <Text style={[styles.signUpButtonText, { color: colors.tint }]}>
-              Sign Up
-            </Text>
+            <Text style={[styles.signUpButtonText, { color: colors.tint }]}>Sign Up</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Footer Badges */}
         <View style={styles.footerBadges}>
           <View style={styles.badge}>
             <MaterialCommunityIcons
@@ -292,19 +240,11 @@ export default function LoginScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              VERIFIED
-            </Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>VERIFIED</Text>
           </View>
           <View style={styles.badge}>
-            <MaterialCommunityIcons
-              name="lock"
-              size={24}
-              color={colors.tint}
-            />
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              SECURE
-            </Text>
+            <MaterialCommunityIcons name="lock" size={24} color={colors.tint} />
+            <Text style={[styles.badgeText, { color: colors.text }]}>SECURE</Text>
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons
@@ -312,9 +252,7 @@ export default function LoginScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>
-              24/7 CARE
-            </Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>24/7 CARE</Text>
           </View>
         </View>
       </ScrollView>
@@ -413,26 +351,6 @@ const styles = StyleSheet.create({
   forgotLink: {
     fontSize: 12,
     fontWeight: "500",
-  },
-  nidUploadBox: {
-    borderWidth: 2,
-    borderStyle: "dashed",
-    borderRadius: 8,
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  nidUploadTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginTop: 12,
-    textAlign: "center",
-  },
-  nidUploadSubtext: {
-    fontSize: 12,
-    marginTop: 4,
-    textAlign: "center",
   },
   securityNotice: {
     flexDirection: "row",
