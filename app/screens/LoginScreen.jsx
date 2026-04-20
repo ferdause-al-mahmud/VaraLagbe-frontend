@@ -3,15 +3,13 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
-import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
@@ -36,7 +34,7 @@ export default function LoginScreen() {
     if (!nidFile) {
       Alert.alert(
         "Validation Error",
-        "Please upload your National ID for verification"
+        "Please upload your National ID for verification",
       );
       return;
     }
@@ -104,7 +102,10 @@ export default function LoginScreen() {
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <View
-            style={[styles.securityBadge, { backgroundColor: colors.cardBackground }]}
+            style={[
+              styles.securityBadge,
+              { backgroundColor: colors.cardBackground },
+            ]}
           >
             <MaterialCommunityIcons
               name="shield-check"
@@ -136,7 +137,10 @@ export default function LoginScreen() {
             <View
               style={[
                 styles.inputContainer,
-                { backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
               ]}
             >
               <MaterialCommunityIcons
@@ -172,7 +176,10 @@ export default function LoginScreen() {
             <View
               style={[
                 styles.inputContainer,
-                { backgroundColor: colors.background, borderColor: colors.border },
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                },
               ]}
             >
               <MaterialCommunityIcons
@@ -200,37 +207,6 @@ export default function LoginScreen() {
                 />
               </TouchableOpacity>
             </View>
-          </View>
-
-          {/* NID Verification */}
-          <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>
-              National ID (NID) Verification
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.nidUploadBox,
-                { backgroundColor: colors.background, borderColor: colors.border },
-              ]}
-              onPress={handleNIDUpload}
-            >
-              <MaterialCommunityIcons
-                name="id-card"
-                size={40}
-                color={colors.tint}
-              />
-              <Text style={[styles.nidUploadTitle, { color: colors.text }]}>
-                {nidFile ? nidFile : "Upload NID for Verification"}
-              </Text>
-              <Text
-                style={[
-                  styles.nidUploadSubtext,
-                  { color: colors.text, opacity: 0.6 },
-                ]}
-              >
-                JPEG, PNG or PDF (Max 5MB)
-              </Text>
-            </TouchableOpacity>
           </View>
 
           {/* Security Notice */}
@@ -297,11 +273,7 @@ export default function LoginScreen() {
             </Text>
           </View>
           <View style={styles.badge}>
-            <MaterialCommunityIcons
-              name="lock"
-              size={24}
-              color={colors.tint}
-            />
+            <MaterialCommunityIcons name="lock" size={24} color={colors.tint} />
             <Text style={[styles.badgeText, { color: colors.text }]}>
               SECURE
             </Text>
