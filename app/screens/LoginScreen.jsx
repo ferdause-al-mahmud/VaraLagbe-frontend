@@ -13,6 +13,7 @@ import {
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+import { setAuthSession } from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -57,6 +58,11 @@ export default function LoginScreen() {
         Alert.alert("Login Failed", data.message || "Login failed. Please try again.");
         return;
       }
+
+      setAuthSession({
+        token: data.token,
+        user: data.user,
+      });
 
       router.replace("/tabs");
     } catch (error) {
