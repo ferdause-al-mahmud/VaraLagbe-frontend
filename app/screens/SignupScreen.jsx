@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,6 +16,31 @@ import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 
 const API_BASE_URL = "http://localhost:5000";
+
+function showMessage(title, message) {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.alert(`${title}\n\n${message}`);
+    return;
+  }
+
+  Alert.alert(title, message);
+}
+
+function getSignupErrorMessage(status, backendMessage) {
+  if (status === 409) {
+    return backendMessage || "An account with this email or phone number already exists.";
+  }
+
+  if (status === 400) {
+    return backendMessage || "Please review your information and try again.";
+  }
+
+  if (status >= 500) {
+    return "The server is having trouble right now. Please try again in a moment.";
+  }
+
+  return backendMessage || "Signup failed. Please try again.";
+}
 
 export default function SignupScreen() {
   const colorScheme = useColorScheme();
@@ -34,39 +60,39 @@ export default function SignupScreen() {
 
   const handleSignUp = async () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
-      Alert.alert("Validation Error", "Please fill in all required fields");
+      showMessage("Validation Error", "Please fill in all required fields.");
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert("Validation Error", "Passwords do not match");
+      showMessage("Validation Error", "Passwords do not match.");
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert("Validation Error", "Password must be at least 8 characters");
+      showMessage("Validation Error", "Password must be at least 8 characters.");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Validation Error", "Please enter a valid email address");
+      showMessage("Validation Error", "Please enter a valid email address.");
       return;
     }
 
     const phoneRegex = /^01[0-9]{9}$/;
     if (!phoneRegex.test(phone)) {
-      Alert.alert(
+      showMessage(
         "Validation Error",
-        "Please enter a valid Bangladesh phone number",
+        "Please enter a valid Bangladesh phone number.",
       );
       return;
     }
 
     if (!agreed) {
-      Alert.alert(
+      showMessage(
         "Validation Error",
-        "Please agree to the Terms and Conditions",
+        "Please agree to the Terms and Conditions.",
       );
       return;
     }
@@ -93,13 +119,19 @@ export default function SignupScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Signup Failed", data.message || "Signup failed. Please try again.");
+        showMessage(
+          "Signup Failed",
+          getSignupErrorMessage(response.status, data.message),
+        );
         return;
       }
 
       router.replace("/login");
     } catch (error) {
-      Alert.alert("Error", error.message || "Signup failed. Please try again.");
+      showMessage(
+        "Connection Problem",
+        "We could not reach the server. Please check your internet or backend connection and try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -110,7 +142,7 @@ export default function SignupScreen() {
   };
 
   const handleNIDUpload = () => {
-    Alert.alert("Upload NID", "File picker implementation coming soon");
+    showMessage("Upload NID", "File picker implementation coming soon.");
   };
 
   return (
