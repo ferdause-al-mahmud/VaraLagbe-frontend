@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,31 @@ import { setAuthSession } from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
 
+function showMessage(title, message) {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.alert(`${title}\n\n${message}`);
+    return;
+  }
+
+  Alert.alert(title, message);
+}
+
+function getLoginErrorMessage(status, backendMessage) {
+  if (status === 401) {
+    return "Invalid email or password. Please check your credentials and try again.";
+  }
+
+  if (status === 400) {
+    return backendMessage || "Please review your login details and try again.";
+  }
+
+  if (status >= 500) {
+    return "The server is having trouble right now. Please try again in a moment.";
+  }
+
+  return backendMessage || "Login failed. Please try again.";
+}
+
 export default function LoginScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -29,13 +55,13 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Validation Error", "Please fill in all required fields");
+      showMessage("Validation Error", "Please fill in all required fields.");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Validation Error", "Please enter a valid email address");
+      showMessage("Validation Error", "Please enter a valid email address.");
       return;
     }
 
@@ -55,7 +81,10 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        Alert.alert("Login Failed", data.message || "Login failed. Please try again.");
+        showMessage(
+          "Login Failed",
+          getLoginErrorMessage(response.status, data.message),
+        );
         return;
       }
 
@@ -66,7 +95,10 @@ export default function LoginScreen() {
 
       router.replace("/tabs");
     } catch (error) {
-      Alert.alert("Error", error.message || "Login failed. Please try again.");
+      showMessage(
+        "Connection Problem",
+        "We could not reach the server. Please check your internet or backend connection and try again.",
+      );
     } finally {
       setIsLoading(false);
     }
