@@ -51,8 +51,10 @@ export default function ProfileScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
-  const [favoritesInput, setFavoritesInput] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [thanaUpazila, setThanaUpazila] = useState("");
+  const [cityDistrict, setCityDistrict] = useState("");
+  const [addressOptional, setAddressOptional] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPersonalInfo, setShowPersonalInfo] = useState(false);
@@ -62,8 +64,10 @@ export default function ProfileScreen() {
     setFullName(user?.fullName ?? "");
     setEmail(user?.email ?? "");
     setPhone(user?.phone ?? "");
-    setAddress(user?.address ?? "");
-    setFavoritesInput(Array.isArray(user?.favorites) ? user.favorites.join(", ") : "");
+    setStreetAddress(user?.address?.streetAddress ?? "");
+    setThanaUpazila(user?.address?.thanaUpazila ?? "");
+    setCityDistrict(user?.address?.cityDistrict ?? "");
+    setAddressOptional(user?.address?.optional ?? "");
   }, []);
 
   const loadProfile = useCallback(async () => {
@@ -112,7 +116,10 @@ export default function ProfileScreen() {
     : 0;
   const bookingsCount = 0;
   const savedSearchesCount = 0;
-  const locationText = profile?.address?.trim() || "Add your address";
+  const locationText =
+    profile?.address?.cityDistrict?.trim() ||
+    profile?.address?.thanaUpazila?.trim() ||
+    "Add your address";
   const initials = useMemo(() => getInitials(profile?.fullName), [profile?.fullName]);
 
   const handleSave = async () => {
@@ -148,11 +155,6 @@ export default function ProfileScreen() {
       return;
     }
 
-    const favorites = favoritesInput
-      .split(",")
-      .map((item) => item.trim())
-      .filter(Boolean);
-
     setIsSaving(true);
 
     try {
@@ -166,8 +168,12 @@ export default function ProfileScreen() {
           fullName: trimmedName,
           email: trimmedEmail,
           phone: trimmedPhone,
-          address: address.trim(),
-          favorites,
+          address: {
+            streetAddress: streetAddress.trim(),
+            thanaUpazila: thanaUpazila.trim(),
+            cityDistrict: cityDistrict.trim(),
+            optional: addressOptional.trim(),
+          },
         }),
       });
 
@@ -246,8 +252,9 @@ export default function ProfileScreen() {
           <View style={styles.trustCopy}>
             <Text style={styles.trustTitle}>Trust Status: Verified</Text>
             <Text style={styles.trustText}>
-              Your identity and mobile number have been verified for secure
-              transactions.
+              {profile?.phone
+                ? "Your identity and mobile number have been verified for secure transactions."
+                : "Complete your profile details to strengthen trust and secure transactions."}
             </Text>
           </View>
           <MaterialCommunityIcons name="check-circle" size={28} color="#0A7A39" />
@@ -265,6 +272,15 @@ export default function ProfileScreen() {
             <Text style={styles.statNumber}>{String(favoritesCount).padStart(2, "0")}</Text>
             <Text style={styles.statLabel}>Favorites</Text>
           </View>
+        </View>
+
+        <View style={styles.favoritesEmptyCard}>
+          <Text style={styles.favoritesEmptyTitle}>Favorites</Text>
+          <Text style={styles.favoritesEmptyText}>
+            {favoritesCount > 0
+              ? `${favoritesCount} favorites are available from the backend and will be shown here as cards soon.`
+              : "There are no favorites yet."}
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -344,12 +360,12 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Address</Text>
+                <Text style={styles.label}>Street Address</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder="Dhaka, Bangladesh"
+                  value={streetAddress}
+                  onChangeText={setStreetAddress}
+                  placeholder="House, road, area"
                   placeholderTextColor="#9AA3AA"
                   multiline
                   textAlignVertical="top"
@@ -358,20 +374,39 @@ export default function ProfileScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Favorites</Text>
+                <Text style={styles.label}>Thana / Upazila</Text>
                 <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={favoritesInput}
-                  onChangeText={setFavoritesInput}
-                  placeholder="Comma-separated property IDs"
+                  style={styles.input}
+                  value={thanaUpazila}
+                  onChangeText={setThanaUpazila}
+                  placeholder="Thana or Upazila"
                   placeholderTextColor="#9AA3AA"
-                  multiline
-                  textAlignVertical="top"
                   editable={!isLoading && !isSaving}
                 />
-                <Text style={styles.helperText}>
-                  Separate favorite property IDs with commas.
-                </Text>
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>City / District</Text>
+                <TextInput
+                  style={styles.input}
+                  value={cityDistrict}
+                  onChangeText={setCityDistrict}
+                  placeholder="City or District"
+                  placeholderTextColor="#9AA3AA"
+                  editable={!isLoading && !isSaving}
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Optional</Text>
+                <TextInput
+                  style={styles.input}
+                  value={addressOptional}
+                  onChangeText={setAddressOptional}
+                  placeholder="Landmark, apartment, note"
+                  placeholderTextColor="#9AA3AA"
+                  editable={!isLoading && !isSaving}
+                />
               </View>
 
               <TouchableOpacity
@@ -433,7 +468,7 @@ export default function ProfileScreen() {
         <View style={styles.footerBrand}>
           <Text style={styles.footerBrandTitle}>VARALAGBE</Text>
           <Text style={styles.footerBrandText}>
-            VERSION 2.4.0 • CURATED RENTAL EXPERIENCE
+            VERSION 2.4.0 | CURATED RENTAL EXPERIENCE
           </Text>
         </View>
       </ScrollView>
@@ -630,6 +665,29 @@ const styles = StyleSheet.create({
   savedSearchText: {
     fontSize: 14,
     color: "#5B666E",
+  },
+  favoritesEmptyCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    marginBottom: 22,
+    shadowColor: "#0A1620",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  favoritesEmptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#12181C",
+    marginBottom: 6,
+  },
+  favoritesEmptyText: {
+    fontSize: 14,
+    color: "#5B666E",
+    lineHeight: 20,
   },
   sectionHeading: {
     fontSize: 18,
