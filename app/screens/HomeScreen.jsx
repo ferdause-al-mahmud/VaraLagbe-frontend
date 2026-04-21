@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
@@ -25,6 +26,7 @@ const filters = [
 ];
 
 export default function HomeScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const isDark = colorScheme === "dark";
@@ -73,6 +75,7 @@ export default function HomeScreen() {
 
   const PropertyCard = ({ item }) => (
     <TouchableOpacity
+      onPress={() => router.push(`/property-details?propertyId=${item.id}`)}
       style={[
         styles.propertyCard,
         { backgroundColor: isDark ? colors.cardBackground : "#fff" },
