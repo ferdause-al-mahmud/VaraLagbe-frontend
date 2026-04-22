@@ -15,6 +15,7 @@ import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+import FilterModal from "../components/FilterModal";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -33,15 +34,44 @@ export default function HomeScreen() {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [currentFilters, setCurrentFilters] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchProperties();
   }, []);
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (filters = {}, search = "") => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/properties`);
+      // Build query parameters from filters and search
+      const queryParams = new URLSearchParams();
+
+      if (search) queryParams.append("search", search);
+      if (filters.minPrice) queryParams.append("minPrice", filters.minPrice);
+      if (filters.maxPrice) queryParams.append("maxPrice", filters.maxPrice);
+      if (filters.propertyType) {
+        filters.propertyType.forEach((type) =>
+          queryParams.append("propertyType", type),
+        );
+      }
+      if (filters.amenities) {
+        filters.amenities.forEach((amenity) =>
+          queryParams.append("amenities", amenity),
+        );
+      }
+      if (filters.location) {
+        filters.location.forEach((location) =>
+          queryParams.append("location", location),
+        );
+      }
+
+      const url = queryParams.toString()
+        ? `${API_BASE_URL}/api/properties/search/filter?${queryParams.toString()}`
+        : `${API_BASE_URL}/api/properties`;
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Failed to fetch properties");
       }
@@ -71,6 +101,19 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApplyFilters = (filters) => {
+    setCurrentFilters(filters);
+    fetchProperties(filters, searchQuery);
+  };
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+  };
+
+  const handleSearchSubmit = () => {
+    fetchProperties(currentFilters, searchQuery);
   };
 
   const PropertyCard = ({ item }) => (
@@ -197,16 +240,20 @@ export default function HomeScreen() {
             style={[styles.searchInput, { color: colors.text }]}
             placeholder="Search areas or property types..."
             placeholderTextColor="#666"
+            value={searchQuery}
+            onChangeText={handleSearch}
+            onSubmitEditing={handleSearchSubmit}
           />
           <TouchableOpacity
             style={[styles.filterBtn, { backgroundColor: colors.tint }]}
+            onPress={() => setFilterModalVisible(true)}
           >
             <MaterialCommunityIcons name="tune" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
 
         {/* Filter Buttons */}
-        <View style={styles.filterSection}>
+        {/* <View style={styles.filterSection}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -239,7 +286,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </View>
+        </View> */}
 
         {/* Recommended Section */}
         <View style={styles.sectionHeader}>
@@ -282,6 +329,13 @@ export default function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApplyFilters={handleApplyFilters}
+        initialFilters={currentFilters}
+      />
     </ThemedView>
   );
 }
