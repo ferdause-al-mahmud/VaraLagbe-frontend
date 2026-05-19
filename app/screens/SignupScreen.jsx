@@ -17,6 +17,21 @@ import { useColorScheme } from "../hooks/useColorScheme";
 
 const API_BASE_URL = "http://localhost:5000";
 
+const ACCOUNT_ROLES = [
+  {
+    value: "user",
+    label: "Tenant",
+    description: "Find and save rental homes.",
+    icon: "home-search",
+  },
+  {
+    value: "owner",
+    label: "Owner",
+    description: "List and manage properties.",
+    icon: "home-city",
+  },
+];
+
 function showMessage(title, message) {
   if (Platform.OS === "web" && typeof window !== "undefined") {
     window.alert(`${title}\n\n${message}`);
@@ -50,6 +65,7 @@ export default function SignupScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [role, setRole] = useState("user");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -109,6 +125,7 @@ export default function SignupScreen() {
           fullName,
           email,
           phone,
+          role,
           password,
           confirmPassword,
           agreed,
@@ -272,6 +289,65 @@ export default function SignupScreen() {
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
+            </View>
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Account Type</Text>
+            <View style={styles.roleOptions}>
+              {ACCOUNT_ROLES.map((accountRole) => {
+                const isSelected = role === accountRole.value;
+
+                return (
+                  <TouchableOpacity
+                    key={accountRole.value}
+                    style={[
+                      styles.roleOption,
+                      {
+                        backgroundColor: colors.background,
+                        borderColor: isSelected ? colors.tint : colors.border,
+                      },
+                    ]}
+                    onPress={() => setRole(accountRole.value)}
+                    activeOpacity={0.85}
+                  >
+                    <View
+                      style={[
+                        styles.roleIconWrap,
+                        {
+                          backgroundColor: isSelected
+                            ? colors.tint
+                            : colors.cardBackground,
+                        },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={accountRole.icon}
+                        size={22}
+                        color={isSelected ? "#FFFFFF" : colors.tint}
+                      />
+                    </View>
+                    <View style={styles.roleCopy}>
+                      <Text style={[styles.roleLabel, { color: colors.text }]}>
+                        {accountRole.label}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.roleDescription,
+                          { color: colors.text, opacity: 0.65 },
+                        ]}
+                      >
+                        {accountRole.description}
+                      </Text>
+                    </View>
+                    <MaterialCommunityIcons
+                      name={isSelected ? "radiobox-marked" : "radiobox-blank"}
+                      size={22}
+                      color={isSelected ? colors.tint : colors.border}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -562,6 +638,39 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingVertical: 0,
+  },
+  roleOptions: {
+    gap: 10,
+  },
+  roleOption: {
+    minHeight: 72,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  roleIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  roleCopy: {
+    flex: 1,
+    marginRight: 10,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  roleDescription: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   eyeIcon: {
     padding: 8,

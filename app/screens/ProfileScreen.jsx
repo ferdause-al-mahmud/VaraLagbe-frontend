@@ -116,6 +116,7 @@ export default function ProfileScreen() {
     : 0;
   const bookingsCount = 0;
   const savedSearchesCount = 0;
+  const isOwner = profile?.role === "owner";
   const locationText =
     profile?.address?.cityDistrict?.trim() ||
     profile?.address?.thanaUpazila?.trim() ||
@@ -303,6 +304,23 @@ export default function ProfileScreen() {
         <Text style={styles.sectionHeading}>Account Settings</Text>
 
         <View style={styles.settingsCard}>
+          {isOwner ? (
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push("/dashboard")}
+            >
+              <View style={styles.settingLeft}>
+                <MaterialCommunityIcons
+                  name="view-dashboard"
+                  size={24}
+                  color="#0C4A60"
+                />
+                <Text style={styles.settingText}>Dashboard</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+            </TouchableOpacity>
+          ) : null}
+
           <TouchableOpacity
             style={styles.settingRow}
             onPress={() => setShowPersonalInfo((current) => !current)}
