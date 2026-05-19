@@ -119,13 +119,19 @@ export default function OwnerDashboardScreen() {
               </View>
 
               <View style={styles.listingFooter}>
-                <View style={styles.detailBlock}>
-                  <Text style={styles.smallLabel}>RENT</Text>
-                  <Text style={styles.detailValue}>{listing.rent}</Text>
-                </View>
-                <View style={styles.detailBlock}>
-                  <Text style={styles.smallLabel}>TYPE</Text>
-                  <Text style={styles.detailValue}>{listing.type}</Text>
+                <View style={styles.listingMeta}>
+                  <View style={styles.detailBlock}>
+                    <Text style={styles.smallLabel}>RENT</Text>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {listing.rent}
+                    </Text>
+                  </View>
+                  <View style={styles.detailBlock}>
+                    <Text style={styles.smallLabel}>TYPE</Text>
+                    <Text style={styles.detailValue} numberOfLines={1}>
+                      {listing.type}
+                    </Text>
+                  </View>
                 </View>
                 <View style={styles.actionButtons}>
                   <TouchableOpacity style={styles.actionButton}>
@@ -298,7 +304,7 @@ const styles = StyleSheet.create({
     marginBottom: 34,
   },
   imageWrap: {
-    height: 236,
+    height: 214,
     backgroundColor: "#D9E5E8",
   },
   listingImage: {
@@ -327,15 +333,16 @@ const styles = StyleSheet.create({
     color: "#0B1B20",
   },
   listingBody: {
-    paddingHorizontal: 26,
-    paddingTop: 22,
-    paddingBottom: 24,
+    paddingHorizontal: 22,
+    paddingTop: 20,
+    paddingBottom: 22,
   },
   listingTitle: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: "700",
     color: "#0A1114",
     marginBottom: 7,
+    lineHeight: 26,
   },
   locationRow: {
     flexDirection: "row",
@@ -350,10 +357,10 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor: "#EFF2F4",
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 24,
   },
   smallLabel: {
     fontSize: 10,
@@ -387,26 +394,34 @@ const styles = StyleSheet.create({
   listingFooter: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    gap: 14,
+  },
+  listingMeta: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    gap: 18,
   },
   detailBlock: {
-    width: 92,
+    flex: 1,
+    minWidth: 0,
   },
   detailValue: {
     marginTop: 8,
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
     color: "#0A1114",
   },
   actionButtons: {
-    flex: 1,
     flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
+    gap: 10,
+    flexShrink: 0,
   },
   actionButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 15,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     backgroundColor: "#E9EEF1",
     alignItems: "center",
     justifyContent: "center",
