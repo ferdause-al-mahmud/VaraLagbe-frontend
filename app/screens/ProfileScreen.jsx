@@ -304,22 +304,20 @@ export default function ProfileScreen() {
         <Text style={styles.sectionHeading}>Account Settings</Text>
 
         <View style={styles.settingsCard}>
-          {isOwner ? (
-            <TouchableOpacity
-              style={styles.settingRow}
-              onPress={() => router.push("/dashboard")}
-            >
-              <View style={styles.settingLeft}>
-                <MaterialCommunityIcons
-                  name="view-dashboard"
-                  size={24}
-                  color="#0C4A60"
-                />
-                <Text style={styles.settingText}>Dashboard</Text>
-              </View>
-              <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
-            </TouchableOpacity>
-          ) : null}
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => router.push(isOwner ? "/dashboard" : "/user-dashboard")}
+          >
+            <View style={styles.settingLeft}>
+              <MaterialCommunityIcons
+                name="view-dashboard"
+                size={24}
+                color="#0C4A60"
+              />
+              <Text style={styles.settingText}>Dashboard</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.settingRow}

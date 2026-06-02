@@ -56,6 +56,13 @@ export default function RootLayout() {
           animationEnabled: true,
         }}
       />
+      <Stack.Screen
+        name="user-dashboard"
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+        }}
+      />
     </Stack>
   );
 }
