@@ -1,13 +1,20 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import {
   clearAuthSession,
   getAuthSession,
   setAuthSession,
 } from "../utils/authSession";
+import useColorScheme from "../hooks/useColorScheme";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -116,6 +123,9 @@ export default function OwnerProfileScreen() {
   const propertyCount = getPropertyCount(owner);
   const ownerRating = getOwnerRating(owner);
   const verificationStatus = getVerificationStatus(owner);
+  const colorScheme = useColorScheme();
+
+  const isDark = colorScheme === "dark";
 
   const loadOwnerProfile = useCallback(async () => {
     const session = getAuthSession();
@@ -171,18 +181,33 @@ export default function OwnerProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.menuButton} onPress={() => router.back()}>
-            <MaterialCommunityIcons name="menu" size={27} color="#062D43" />
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => router.push("/tabs/home")}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={27}
+              color={isDark ? "#fff" : "#333"}
+            />
           </TouchableOpacity>
           <Text style={styles.brand}>VaraLagbe</Text>
-          <View style={styles.topAvatar}>
-            <MaterialCommunityIcons name="account-tie" size={31} color="#11181C" />
+          <View style={styles.avatar}>
+            <MaterialCommunityIcons
+              name="account-tie"
+              size={22}
+              color="#FFFFFF"
+            />
           </View>
         </View>
 
         <View style={styles.profileCard}>
           <View style={styles.verifiedPill}>
-            <MaterialCommunityIcons name="shield-check" size={14} color="#3B240B" />
+            <MaterialCommunityIcons
+              name="shield-check"
+              size={14}
+              color="#3B240B"
+            />
             <Text style={styles.verifiedText}>VERIFIED OWNER</Text>
           </View>
 
@@ -211,20 +236,32 @@ export default function OwnerProfileScreen() {
         <View style={styles.securityCard}>
           <TouchableOpacity style={styles.securityRow} activeOpacity={0.86}>
             <View style={styles.securityIcon}>
-              <MaterialCommunityIcons name="card-account-details" size={23} color="#063F52" />
+              <MaterialCommunityIcons
+                name="card-account-details"
+                size={23}
+                color="#063F52"
+              />
             </View>
             <View style={styles.securityCopy}>
               <Text style={styles.securityTitle}>NID Verification</Text>
               <Text style={styles.securityStatus}>{verificationStatus}</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={28} color="#B9C4CB" />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#B9C4CB"
+            />
           </TouchableOpacity>
 
           <View style={styles.securityDivider} />
 
           <View style={styles.securityRow}>
             <View style={styles.securityIcon}>
-              <MaterialCommunityIcons name="lock-clock" size={23} color="#063F52" />
+              <MaterialCommunityIcons
+                name="lock-clock"
+                size={23}
+                color="#063F52"
+              />
             </View>
             <View style={styles.securityCopy}>
               <Text style={styles.securityTitle}>Security</Text>
@@ -247,8 +284,17 @@ export default function OwnerProfileScreen() {
           {REVIEWS.map((review) => (
             <View key={review.id} style={styles.reviewCard}>
               <View style={styles.reviewUserRow}>
-                <View style={[styles.reviewAvatar, { backgroundColor: review.color }]}>
-                  <MaterialCommunityIcons name={review.icon} size={35} color="#FFFFFF" />
+                <View
+                  style={[
+                    styles.reviewAvatar,
+                    { backgroundColor: review.color },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={review.icon}
+                    size={35}
+                    color="#FFFFFF"
+                  />
                 </View>
                 <View>
                   <Text style={styles.reviewName}>{review.name}</Text>
@@ -286,20 +332,34 @@ export default function OwnerProfileScreen() {
       </ScrollView>
 
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/dashboard")}>
-          <MaterialCommunityIcons name="view-dashboard" size={23} color="#1F2D33" />
+        <TouchableOpacity
+          style={[styles.navItem]}
+          onPress={() => router.push("/dashboard")}
+        >
+          <MaterialCommunityIcons
+            name="view-dashboard"
+            size={22}
+            color="#233138"
+          />
           <Text style={styles.navText}>DASHBOARD</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="plus-circle" size={24} color="#1F2D33" />
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/add-property")}
+        >
+          <MaterialCommunityIcons
+            name="plus-circle"
+            size={21}
+            color="#233138"
+          />
           <Text style={styles.navText}>ADD NEW</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="message" size={24} color="#1F2D33" />
+          <MaterialCommunityIcons name="message" size={20} color="#233138" />
           <Text style={styles.navText}>MESSAGES</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.navActive]}>
-          <MaterialCommunityIcons name="account" size={24} color="#FFFFFF" />
+        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
+          <MaterialCommunityIcons name="account" size={20} color="#233138" />
           <Text style={styles.navTextActive}>PROFILE</Text>
         </TouchableOpacity>
       </View>
@@ -337,16 +397,15 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     color: "#063F52",
   },
-  topAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 3,
-    borderColor: "#071015",
-    backgroundColor: "#F1A987",
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#0B5D72",
+    borderWidth: 2,
+    borderColor: "#08232C",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
   },
   profileCard: {
     borderRadius: 18,
@@ -570,42 +629,38 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 85,
-    borderTopLeftRadius: 17,
-    borderTopRightRadius: 17,
+    height: 70,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 22,
-    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#E4EAED",
+    paddingHorizontal: 18,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
-    shadowColor: "#0D2730",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 8,
   },
   navItem: {
-    minWidth: 66,
-    height: 65,
-    borderRadius: 12,
+    minWidth: 62,
+    height: 58,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  navActive: {
-    minWidth: 83,
-    backgroundColor: "#086A7D",
+  navItemActive: {
+    minWidth: 104,
+    backgroundColor: "#08667A",
   },
   navText: {
-    marginTop: 5,
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#1E2B31",
+    marginTop: 4,
+    fontSize: 9,
+    color: "#18282F",
+    fontWeight: "700",
   },
   navTextActive: {
-    marginTop: 5,
-    fontSize: 10,
-    fontWeight: "900",
+    marginTop: 4,
+    fontSize: 9,
     color: "#FFFFFF",
+    fontWeight: "800",
   },
 });

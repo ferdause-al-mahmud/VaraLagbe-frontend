@@ -93,7 +93,7 @@ export default function LoginScreen() {
         user: data.user,
       });
 
-      router.replace("/tabs");
+      router.replace("/tabs/home");
     } catch (error) {
       showMessage(
         "Connection Problem",
@@ -126,8 +126,12 @@ export default function LoginScreen() {
               color={colors.text}
             />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Login / Sign Up</Text>
-          <Text style={[styles.brandTitle, { color: colors.tint }]}>VaraLagbe</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Login / Sign Up
+          </Text>
+          <Text style={[styles.brandTitle, { color: colors.tint }]}>
+            VaraLagbe
+          </Text>
         </View>
 
         <View style={styles.welcomeSection}>
@@ -143,8 +147,10 @@ export default function LoginScreen() {
               color={colors.tint}
             />
           </View>
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>Welcome Back</Text>
-          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}> 
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            Welcome Back
+          </Text>
+          <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>
             Securely access the most trusted property rental platform in
             Bangladesh.
           </Text>
@@ -157,7 +163,9 @@ export default function LoginScreen() {
           ]}
         >
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Email Address</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Email Address
+            </Text>
             <View
               style={[
                 styles.inputContainer,
@@ -187,9 +195,13 @@ export default function LoginScreen() {
 
           <View style={styles.formGroup}>
             <View style={styles.passwordHeader}>
-              <Text style={[styles.label, { color: colors.text }]}>Password</Text>
+              <Text style={[styles.label, { color: colors.text }]}>
+                Password
+              </Text>
               <TouchableOpacity onPress={handleForgotPassword}>
-                <Text style={[styles.forgotLink, { color: colors.tint }]}>Forgot?</Text>
+                <Text style={[styles.forgotLink, { color: colors.tint }]}>
+                  Forgot?
+                </Text>
               </TouchableOpacity>
             </View>
             <View
@@ -239,7 +251,7 @@ export default function LoginScreen() {
               size={20}
               color={colors.tint}
             />
-            <Text style={[styles.securityText, { color: colors.text }]}> 
+            <Text style={[styles.securityText, { color: colors.text }]}>
               YOUR DATA IS ENCRYPTED AND HANDLED SECURELY
             </Text>
           </View>
@@ -254,7 +266,9 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>OR JOIN US</Text>
+          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>
+            OR JOIN US
+          </Text>
 
           <TouchableOpacity
             style={[
@@ -267,7 +281,9 @@ export default function LoginScreen() {
             ]}
             onPress={handleSignUp}
           >
-            <Text style={[styles.signUpButtonText, { color: colors.tint }]}>Sign Up</Text>
+            <Text style={[styles.signUpButtonText, { color: colors.tint }]}>
+              Sign Up
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -278,11 +294,15 @@ export default function LoginScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>VERIFIED</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              VERIFIED
+            </Text>
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons name="lock" size={24} color={colors.tint} />
-            <Text style={[styles.badgeText, { color: colors.text }]}>SECURE</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              SECURE
+            </Text>
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons
@@ -290,7 +310,9 @@ export default function LoginScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>24/7 CARE</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              24/7 CARE
+            </Text>
           </View>
         </View>
       </ScrollView>

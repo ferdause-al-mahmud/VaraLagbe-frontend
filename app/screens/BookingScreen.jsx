@@ -6,11 +6,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
 
 export default function BookingScreen() {
+  const router = useRouter();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -52,6 +54,10 @@ export default function BookingScreen() {
           },
         ]}
       >
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
         <TouchableOpacity style={styles.closeButton}>
           <MaterialCommunityIcons
             name="close"

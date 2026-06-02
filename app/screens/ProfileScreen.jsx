@@ -110,7 +110,10 @@ export default function ProfileScreen() {
       applyProfile(user);
       setAuthSession({ token: session.token, user });
     } catch (error) {
-      showMessage("Profile Error", error.message || "Could not load your profile.");
+      showMessage(
+        "Profile Error",
+        error.message || "Could not load your profile.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +135,10 @@ export default function ProfileScreen() {
     profile?.address?.cityDistrict?.trim() ||
     profile?.address?.thanaUpazila?.trim() ||
     "Add your address";
-  const initials = useMemo(() => getInitials(profile?.fullName), [profile?.fullName]);
+  const initials = useMemo(
+    () => getInitials(profile?.fullName),
+    [profile?.fullName],
+  );
 
   const handleSave = async () => {
     const session = getAuthSession();
@@ -223,8 +229,15 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-            <MaterialCommunityIcons name="arrow-left" size={28} color="#0C4A60" />
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.iconButton}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={28}
+              color="#0C4A60"
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
           <TouchableOpacity
@@ -243,7 +256,11 @@ export default function ProfileScreen() {
               </View>
             </View>
             <View style={styles.verifiedBadge}>
-              <MaterialCommunityIcons name="check-decagram" size={20} color="#FFFFFF" />
+              <MaterialCommunityIcons
+                name="check-decagram"
+                size={20}
+                color="#FFFFFF"
+              />
             </View>
           </View>
 
@@ -252,14 +269,22 @@ export default function ProfileScreen() {
           </Text>
 
           <View style={styles.locationRow}>
-            <MaterialCommunityIcons name="map-marker" size={20} color="#46525C" />
+            <MaterialCommunityIcons
+              name="map-marker"
+              size={20}
+              color="#46525C"
+            />
             <Text style={styles.locationText}>{locationText}</Text>
           </View>
         </View>
 
         <View style={styles.trustCard}>
           <View style={styles.trustIconWrap}>
-            <MaterialCommunityIcons name="shield-account" size={28} color="#0A7A39" />
+            <MaterialCommunityIcons
+              name="shield-account"
+              size={28}
+              color="#0A7A39"
+            />
           </View>
           <View style={styles.trustCopy}>
             <Text style={styles.trustTitle}>Trust Status: Verified</Text>
@@ -269,19 +294,31 @@ export default function ProfileScreen() {
                 : "Complete your profile details to strengthen trust and secure transactions."}
             </Text>
           </View>
-          <MaterialCommunityIcons name="check-circle" size={28} color="#0A7A39" />
+          <MaterialCommunityIcons
+            name="check-circle"
+            size={28}
+            color="#0A7A39"
+          />
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <MaterialCommunityIcons name="calendar-month" size={28} color="#0C4A60" />
-            <Text style={styles.statNumber}>{String(bookingsCount).padStart(2, "0")}</Text>
+            <MaterialCommunityIcons
+              name="calendar-month"
+              size={28}
+              color="#0C4A60"
+            />
+            <Text style={styles.statNumber}>
+              {String(bookingsCount).padStart(2, "0")}
+            </Text>
             <Text style={styles.statLabel}>My Bookings</Text>
           </View>
 
           <View style={styles.statCard}>
             <MaterialCommunityIcons name="heart" size={28} color="#C61D1D" />
-            <Text style={styles.statNumber}>{String(favoritesCount).padStart(2, "0")}</Text>
+            <Text style={styles.statNumber}>
+              {String(favoritesCount).padStart(2, "0")}
+            </Text>
             <Text style={styles.statLabel}>Favorites</Text>
           </View>
         </View>
@@ -309,7 +346,11 @@ export default function ProfileScreen() {
               {savedSearchesCount} active search alerts
             </Text>
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={30} color="#7D878F" />
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={30}
+            color="#7D878F"
+          />
         </TouchableOpacity>
 
         <Text style={styles.sectionHeading}>Account Settings</Text>
@@ -317,7 +358,9 @@ export default function ProfileScreen() {
         <View style={styles.settingsCard}>
           <TouchableOpacity
             style={styles.settingRow}
-            onPress={() => router.push(isOwner ? "/dashboard" : "/user-dashboard")}
+            onPress={() =>
+              router.push(isOwner ? "/dashboard" : "/user-dashboard")
+            }
           >
             <View style={styles.settingLeft}>
               <MaterialCommunityIcons
@@ -327,7 +370,11 @@ export default function ProfileScreen() {
               />
               <Text style={styles.settingText}>Dashboard</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#7D878F"
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -335,7 +382,11 @@ export default function ProfileScreen() {
             onPress={() => setShowPersonalInfo((current) => !current)}
           >
             <View style={styles.settingLeft}>
-              <MaterialCommunityIcons name="account" size={24} color="#46525C" />
+              <MaterialCommunityIcons
+                name="account"
+                size={24}
+                color="#46525C"
+              />
               <Text style={styles.settingText}>Personal Information</Text>
             </View>
             <MaterialCommunityIcons
@@ -456,10 +507,18 @@ export default function ProfileScreen() {
             onPress={() => handlePlaceholderPress("Payment Methods")}
           >
             <View style={styles.settingLeft}>
-              <MaterialCommunityIcons name="cash-multiple" size={24} color="#46525C" />
+              <MaterialCommunityIcons
+                name="cash-multiple"
+                size={24}
+                color="#46525C"
+              />
               <Text style={styles.settingText}>Payment Methods</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#7D878F"
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -470,7 +529,11 @@ export default function ProfileScreen() {
               <MaterialCommunityIcons name="bell" size={24} color="#46525C" />
               <Text style={styles.settingText}>Notification Settings</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#7D878F"
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -478,10 +541,18 @@ export default function ProfileScreen() {
             onPress={() => handlePlaceholderPress("Help & Support")}
           >
             <View style={styles.settingLeft}>
-              <MaterialCommunityIcons name="help-circle" size={24} color="#46525C" />
+              <MaterialCommunityIcons
+                name="help-circle"
+                size={24}
+                color="#46525C"
+              />
               <Text style={styles.settingText}>Help & Support</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={28} color="#7D878F" />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={28}
+              color="#7D878F"
+            />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.logoutRow} onPress={handleLogout}>
