@@ -4,3 +4,5 @@ export function useColorScheme() {
     const colorScheme = useRNColorScheme();
     return colorScheme ?? 'light';
 }
+
+export default useColorScheme;

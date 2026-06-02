@@ -10,3 +10,5 @@ export function ThemedView({ style, lightColor, darkColor, ...rest }) {
 
   return <View {...rest} style={[{ backgroundColor: bg }, style]} />;
 }
+
+export default ThemedView;
