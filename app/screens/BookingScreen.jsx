@@ -58,7 +58,6 @@ export default function BookingScreen() {
           style={styles.closeButton}
           onPress={() => router.back()}
         >
-        <TouchableOpacity style={styles.closeButton}>
           <MaterialCommunityIcons
             name="close"
             size={24}
