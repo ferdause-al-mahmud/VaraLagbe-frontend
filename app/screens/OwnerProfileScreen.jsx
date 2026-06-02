@@ -1,8 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import { clearAuthSession, getAuthSession } from "../utils/authSession";
+import {
+  clearAuthSession,
+  getAuthSession,
+  setAuthSession,
+} from "../utils/authSession";
+
+const API_BASE_URL = "http://localhost:5000";
 
 const REVIEWS = [
   {
@@ -26,13 +33,131 @@ const REVIEWS = [
 ];
 
 function getOwnerName(user) {
-  return user?.fullName?.trim() || "Anwar Hossain";
+  return user?.fullName?.trim() || user?.name?.trim() || "Owner";
+}
+
+function getInitials(name) {
+  if (!name) return "O";
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+function getMemberSince(user) {
+  const joinedDate = user?.createdAt || user?.created_at || user?.joinedAt;
+
+  if (!joinedDate) {
+    return "Member since February 2021";
+  }
+
+  const date = new Date(joinedDate);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Member since February 2021";
+  }
+
+  const month = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ][date.getMonth()];
+
+  return `Member since ${month} ${date.getFullYear()}`;
+}
+
+function getPropertyCount(user) {
+  if (Array.isArray(user?.properties)) return user.properties.length;
+  if (Array.isArray(user?.listings)) return user.listings.length;
+  if (typeof user?.propertyCount === "number") return user.propertyCount;
+  if (typeof user?.totalProperties === "number") return user.totalProperties;
+
+  return 12;
+}
+
+function getOwnerRating(user) {
+  const rating = user?.rating || user?.averageRating || user?.ownerRating;
+
+  if (typeof rating === "number") {
+    return `${rating.toFixed(1)}/5`;
+  }
+
+  return rating || "4.9/5";
+}
+
+function getVerificationStatus(user) {
+  if (user?.nidVerified || user?.verificationStatus === "authenticated") {
+    return "Status: Authenticated";
+  }
+
+  return user?.verificationStatus
+    ? `Status: ${user.verificationStatus}`
+    : "Status: Authenticated";
 }
 
 export default function OwnerProfileScreen() {
   const router = useRouter();
-  const { user } = getAuthSession();
-  const ownerName = getOwnerName(user);
+  const [owner, setOwner] = useState(() => getAuthSession().user);
+  const ownerName = getOwnerName(owner);
+  const ownerInitials = getInitials(ownerName);
+  const memberSince = getMemberSince(owner);
+  const propertyCount = getPropertyCount(owner);
+  const ownerRating = getOwnerRating(owner);
+  const verificationStatus = getVerificationStatus(owner);
+
+  const loadOwnerProfile = useCallback(async () => {
+    const session = getAuthSession();
+
+    if (!session.token) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${session.token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load owner profile.");
+      }
+
+      const user = data.data;
+
+      if (user?.role !== "owner") {
+        setAuthSession({ token: session.token, user });
+        router.replace("/tabs/profile");
+        return;
+      }
+
+      setOwner(user);
+      setAuthSession({ token: session.token, user });
+    } catch (_error) {
+      setOwner(session.user);
+    }
+  }, [router]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOwnerProfile();
+    }, [loadOwnerProfile]),
+  );
 
   const handleSignOut = () => {
     clearAuthSession();
@@ -63,21 +188,21 @@ export default function OwnerProfileScreen() {
 
           <View style={styles.ownerAvatarRing}>
             <View style={styles.ownerAvatar}>
-              <MaterialCommunityIcons name="account-tie" size={62} color="#FFFFFF" />
+              <Text style={styles.ownerAvatarText}>{ownerInitials}</Text>
             </View>
           </View>
 
           <Text style={styles.ownerName}>{ownerName}</Text>
-          <Text style={styles.memberText}>Member since February 2021</Text>
+          <Text style={styles.memberText}>{memberSince}</Text>
 
           <View style={styles.metricRow}>
             <View style={styles.metricCard}>
               <Text style={styles.metricLabel}>PROPERTIES</Text>
-              <Text style={styles.metricValue}>12</Text>
+              <Text style={styles.metricValue}>{propertyCount}</Text>
             </View>
             <View style={styles.metricCard}>
               <Text style={styles.metricLabel}>RATING</Text>
-              <Text style={styles.metricValue}>4.9/5</Text>
+              <Text style={styles.metricValue}>{ownerRating}</Text>
             </View>
           </View>
         </View>
@@ -90,7 +215,7 @@ export default function OwnerProfileScreen() {
             </View>
             <View style={styles.securityCopy}>
               <Text style={styles.securityTitle}>NID Verification</Text>
-              <Text style={styles.securityStatus}>Status: Authenticated</Text>
+              <Text style={styles.securityStatus}>{verificationStatus}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={28} color="#B9C4CB" />
           </TouchableOpacity>
@@ -224,11 +349,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   profileCard: {
-    position: "relative",
     borderRadius: 18,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 28,
-    paddingTop: 28,
+    paddingTop: 20,
     paddingBottom: 27,
     alignItems: "center",
     marginBottom: 42,
@@ -239,9 +363,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   verifiedPill: {
-    position: "absolute",
-    top: 18,
-    right: 18,
     height: 28,
     borderRadius: 14,
     backgroundColor: "#FFD7AD",
@@ -249,6 +370,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
+    alignSelf: "flex-end",
+    marginBottom: 14,
   },
   verifiedText: {
     fontSize: 11,
@@ -271,6 +394,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#1D313B",
     alignItems: "center",
     justifyContent: "center",
+  },
+  ownerAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 33,
+    fontWeight: "900",
   },
   ownerName: {
     fontSize: 29,

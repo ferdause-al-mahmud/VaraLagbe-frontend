@@ -80,6 +80,11 @@ export default function ProfileScreen() {
       return;
     }
 
+    if (session.user?.role === "owner") {
+      router.replace("/owner-profile");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -96,6 +101,12 @@ export default function ProfileScreen() {
       }
 
       const user = data.data;
+      if (user?.role === "owner") {
+        setAuthSession({ token: session.token, user });
+        router.replace("/owner-profile");
+        return;
+      }
+
       applyProfile(user);
       setAuthSession({ token: session.token, user });
     } catch (error) {
