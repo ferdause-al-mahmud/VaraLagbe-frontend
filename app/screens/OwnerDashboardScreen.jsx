@@ -50,9 +50,9 @@ export default function OwnerDashboardScreen() {
             <MaterialCommunityIcons name="menu" size={24} color="#08232C" />
           </TouchableOpacity>
           <Text style={styles.brandText}>VaraLagbe</Text>
-          <View style={styles.avatar}>
+          <TouchableOpacity style={styles.avatar} onPress={() => router.push("/owner-profile")}>
             <MaterialCommunityIcons name="account-tie" size={22} color="#FFFFFF" />
-          </View>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.eyebrow}>OWNER DASHBOARD</Text>
@@ -164,7 +164,7 @@ export default function OwnerDashboardScreen() {
           <MaterialCommunityIcons name="message" size={20} color="#233138" />
           <Text style={styles.navText}>MESSAGES</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/tabs/profile")}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/owner-profile")}>
           <MaterialCommunityIcons name="account" size={20} color="#233138" />
           <Text style={styles.navText}>PROFILE</Text>
         </TouchableOpacity>
