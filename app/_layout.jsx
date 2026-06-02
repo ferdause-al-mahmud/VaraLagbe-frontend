@@ -63,6 +63,13 @@ export default function RootLayout() {
           animationEnabled: true,
         }}
       />
+      <Stack.Screen
+        name="owner-profile"
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+        }}
+      />
     </Stack>
   );
 }
