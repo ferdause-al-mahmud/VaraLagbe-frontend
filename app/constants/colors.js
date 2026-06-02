@@ -27,3 +27,5 @@ export const Colors = {
         error: '#FF6B6B',
     },
 };
+
+export default Colors;

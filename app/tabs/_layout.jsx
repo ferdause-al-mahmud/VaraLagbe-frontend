@@ -13,6 +13,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: true,
+        tabBarShowLabel: true,
         headerStyle: {
           backgroundColor: colors.background,
           borderBottomWidth: 1,
@@ -27,7 +28,7 @@ export default function TabLayout() {
           backgroundColor: colors.background,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          height: 65,
+          height: 80,
           paddingBottom: 8,
           paddingTop: 8,
         },
@@ -46,6 +47,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           headerTitle: "Home",
+          tabBarLabel: "Home",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "home" : "home-outline"}
@@ -61,6 +63,7 @@ export default function TabLayout() {
         options={{
           title: "Search",
           headerTitle: "Search",
+          tabBarLabel: "Search",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "magnify" : "magnify"}
@@ -72,13 +75,14 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="favorites"
+        name="booking"
         options={{
-          title: "Favorites",
-          headerTitle: "Favorites",
+          title: "Bookings",
+          headerTitle: "My Bookings",
+          tabBarLabel: "Bookings",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
-              name={focused ? "heart" : "heart-outline"}
+              name={focused ? "calendar-check" : "calendar-check-outline"}
               size={24}
               color={color}
             />
@@ -91,6 +95,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           headerTitle: "Profile",
+          tabBarLabel: "Profile",
           tabBarIcon: ({ color, focused }) => (
             <MaterialCommunityIcons
               name={focused ? "account" : "account-outline"}
