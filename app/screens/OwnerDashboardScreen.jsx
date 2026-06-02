@@ -1,7 +1,15 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { ThemedView } from "../components/ThemedView";
+import useColorScheme from "../hooks/useColorScheme";
 
 const LISTINGS = [
   {
@@ -38,7 +46,9 @@ const LISTINGS = [
 
 export default function OwnerDashboardScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
 
+  const isDark = colorScheme === "dark";
   return (
     <ThemedView style={styles.screen}>
       <ScrollView
@@ -46,20 +56,42 @@ export default function OwnerDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-            <MaterialCommunityIcons name="menu" size={24} color="#08232C" />
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => router.push("/tabs/home")}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={27}
+              color={isDark ? "#fff" : "#333"}
+            />{" "}
           </TouchableOpacity>
           <Text style={styles.brandText}>VaraLagbe</Text>
-          <TouchableOpacity style={styles.avatar} onPress={() => router.push("/owner-profile")}>
-            <MaterialCommunityIcons name="account-tie" size={22} color="#FFFFFF" />
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => router.push("/owner-profile")}
+          >
+            <MaterialCommunityIcons
+              name="account-tie"
+              size={22}
+              color="#FFFFFF"
+            />
           </TouchableOpacity>
         </View>
 
         <Text style={styles.eyebrow}>OWNER DASHBOARD</Text>
         <Text style={styles.title}>My Listings</Text>
 
-        <TouchableOpacity style={styles.postButton} activeOpacity={0.88}>
-          <MaterialCommunityIcons name="plus-circle" size={22} color="#FFFFFF" />
+        <TouchableOpacity
+          style={styles.postButton}
+          activeOpacity={0.88}
+          onPress={() => router.push("/add-property")}
+        >
+          <MaterialCommunityIcons
+            name="plus-circle"
+            size={22}
+            color="#FFFFFF"
+          />
           <Text style={styles.postButtonText}>Post New Property</Text>
         </TouchableOpacity>
 
@@ -102,7 +134,11 @@ export default function OwnerDashboardScreen() {
             <View style={styles.listingBody}>
               <Text style={styles.listingTitle}>{listing.title}</Text>
               <View style={styles.locationRow}>
-                <MaterialCommunityIcons name="map-marker" size={13} color="#27343A" />
+                <MaterialCommunityIcons
+                  name="map-marker"
+                  size={13}
+                  color="#27343A"
+                />
                 <Text style={styles.locationText}>{listing.location}</Text>
               </View>
 
@@ -135,7 +171,11 @@ export default function OwnerDashboardScreen() {
                 </View>
                 <View style={styles.actionButtons}>
                   <TouchableOpacity style={styles.actionButton}>
-                    <MaterialCommunityIcons name="pencil" size={20} color="#17262C" />
+                    <MaterialCommunityIcons
+                      name="pencil"
+                      size={20}
+                      color="#17262C"
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.actionButton}>
                     <MaterialCommunityIcons
@@ -153,18 +193,32 @@ export default function OwnerDashboardScreen() {
 
       <View style={styles.bottomNav}>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <MaterialCommunityIcons name="view-dashboard" size={22} color="#FFFFFF" />
+          <MaterialCommunityIcons
+            name="view-dashboard"
+            size={22}
+            color="#FFFFFF"
+          />
           <Text style={styles.navTextActive}>DASHBOARD</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialCommunityIcons name="plus-circle" size={21} color="#233138" />
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/add-property")}
+        >
+          <MaterialCommunityIcons
+            name="plus-circle"
+            size={21}
+            color="#233138"
+          />
           <Text style={styles.navText}>ADD NEW</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem}>
           <MaterialCommunityIcons name="message" size={20} color="#233138" />
           <Text style={styles.navText}>MESSAGES</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/owner-profile")}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/owner-profile")}
+        >
           <MaterialCommunityIcons name="account" size={20} color="#233138" />
           <Text style={styles.navText}>PROFILE</Text>
         </TouchableOpacity>
@@ -198,10 +252,11 @@ const styles = StyleSheet.create({
   },
   brandText: {
     flex: 1,
-    fontSize: 16,
+    textAlign: "center",
+    fontSize: 19,
+    fontWeight: "800",
     fontStyle: "italic",
-    fontWeight: "700",
-    color: "#08232C",
+    color: "#063F52",
   },
   avatar: {
     width: 38,
