@@ -2,22 +2,22 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 import {
-  clearAuthSession,
-  getAuthSession,
-  setAuthSession,
+    clearAuthSession,
+    getAuthSession,
+    setAuthSession,
 } from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -230,13 +230,13 @@ export default function ProfileScreen() {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.push("/tabs/home")}
             style={styles.iconButton}
           >
             <MaterialCommunityIcons
               name="arrow-left"
-              size={28}
-              color="#0C4A60"
+              size={24}
+              color="#0D9488"
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Profile</Text>
@@ -244,7 +244,7 @@ export default function ProfileScreen() {
             onPress={() => setShowPersonalInfo((current) => !current)}
             style={styles.iconButton}
           >
-            <MaterialCommunityIcons name="cog" size={28} color="#0C4A60" />
+            <MaterialCommunityIcons name="cog" size={24} color="#0D9488" />
           </TouchableOpacity>
         </View>
 
@@ -590,17 +590,19 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   iconButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 8,
+    backgroundColor: "rgba(13, 148, 136, 0.1)",
   },
   headerTitle: {
     flex: 1,
     marginLeft: 10,
-    fontSize: 22,
-    fontWeight: "500",
-    color: "#0C4A60",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#063F52",
   },
   profileTop: {
     alignItems: "center",

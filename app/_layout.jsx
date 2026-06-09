@@ -1,15 +1,14 @@
 import { Stack } from "expo-router";
+import Toast from "react-native-toast-message";
 import { Colors } from "./constants/colors";
 import { useColorScheme } from "./hooks/useColorScheme";
-import Toast from "react-native-toast-message";
-import { View } from "react-native";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View style={{ flex: 1 }}>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -73,8 +72,22 @@ export default function RootLayout() {
             animationEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="add-property"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
+        <Stack.Screen
+          name="update-property"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
       </Stack>
       <Toast />
-    </View>
+    </>
   );
 }
