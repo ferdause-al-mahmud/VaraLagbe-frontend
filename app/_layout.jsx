@@ -1,15 +1,14 @@
 import { Stack } from "expo-router";
+import Toast from "react-native-toast-message";
 import { Colors } from "./constants/colors";
 import { useColorScheme } from "./hooks/useColorScheme";
-import Toast from "react-native-toast-message";
-import { View } from "react-native";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View style={{ flex: 1 }}>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -75,6 +74,6 @@ export default function RootLayout() {
         />
       </Stack>
       <Toast />
-    </View>
+    </>
   );
 }
