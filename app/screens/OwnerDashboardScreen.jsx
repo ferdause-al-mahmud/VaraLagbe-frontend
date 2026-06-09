@@ -1,12 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import useColorScheme from "../hooks/useColorScheme";
@@ -170,7 +170,15 @@ export default function OwnerDashboardScreen() {
                   </View>
                 </View>
                 <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/update-property",
+                        params: { propertyId: listing.id },
+                      })
+                    }
+                  >
                     <MaterialCommunityIcons
                       name="pencil"
                       size={20}

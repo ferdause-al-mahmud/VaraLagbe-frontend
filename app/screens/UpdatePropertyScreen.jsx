@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -17,15 +17,16 @@ import { getAuthSession, setAuthSession } from "../utils/authSession";
 import { showToast } from "../utils/toast";
 const API_BASE_URL = "http://localhost:5000";
 
-export default function AddPropertyScreen() {
+export default function UpdatePropertyScreen() {
   const router = useRouter();
+  const { propertyId } = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
   const [loading, setLoading] = useState(false);
+  const [isLoadingProperty, setIsLoadingProperty] = useState(true);
   const [validationErrors, setValidationErrors] = useState({});
   const [profile, setProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [propertyData, setPropertyData] = useState({
     property_type: "",
     title: "",
@@ -50,13 +51,11 @@ export default function AddPropertyScreen() {
     const session = getAuthSession();
 
     if (!session.token) {
-      setIsLoading(false);
-      showToast("Login Required", "Please log in to view your profile.");
+      setIsLoadingProperty(false);
+      showToast("Login Required", "Please log in to update properties.");
       router.replace("/login");
       return;
     }
-
-    setIsLoading(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/users/me`, {
@@ -77,11 +76,10 @@ export default function AddPropertyScreen() {
       if (user.role !== "owner") {
         showToast(
           "Access Denied",
-          "Only property owners can post listings.",
+          "Only property owners can update listings.",
           "error",
         );
         router.replace("/tabs/home");
-        setIsLoading(false);
         return;
       }
 
@@ -92,19 +90,86 @@ export default function AddPropertyScreen() {
         "Profile Error",
         error.message || "Could not load your profile.",
       );
-    } finally {
-      setIsLoading(false);
     }
   }, [router]);
 
+  const loadPropertyData = useCallback(async () => {
+    const session = getAuthSession();
+
+    if (!session.token) {
+      setIsLoadingProperty(false);
+      showToast("Error", "Authentication required");
+      router.back();
+      return;
+    }
+
+    if (!propertyId) {
+      setIsLoadingProperty(false);
+      showToast("Error", "Property ID not found");
+      router.back();
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/properties/${propertyId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to load property");
+      }
+
+      const property = data.data;
+
+      // Pre-fill the form with existing property data
+      setPropertyData({
+        property_type: property.property_type || "",
+        title: property.title || "",
+        price: property.price?.monthly_rent?.toString() || "",
+        description: property.description || "",
+        location: {
+          area: property.location?.area || "",
+          city: property.location?.city || "",
+          country: property.location?.country || "Bangladesh",
+        },
+        specs: {
+          bedrooms: property.specs?.bedrooms?.toString() || "",
+          bathrooms: property.specs?.bathrooms?.toString() || "",
+          area_sqft: property.specs?.area_sqft?.toString() || "",
+          balconies: property.specs?.balconies?.toString() || "",
+        },
+        amenities: property.amenities || [],
+        images: property.images || [],
+      });
+    } catch (error) {
+      console.error("Property load error:", error);
+      showToast(
+        "✗ Error",
+        error.message || "Could not load property details",
+        "error",
+      );
+      router.back();
+    } finally {
+      setIsLoadingProperty(false);
+    }
+  }, [propertyId, router]);
+
   useEffect(() => {
     loadProfile();
-  }, [loadProfile]);
+    loadPropertyData();
+  }, [loadProfile, loadPropertyData]);
 
-  if (isLoading) {
+  if (isLoadingProperty) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color="#0D9488" />
       </View>
     );
   }
@@ -150,8 +215,8 @@ export default function AddPropertyScreen() {
 
   const handlePhotoUpload = async () => {
     Alert.alert(
-      "Photo Upload",
-      "Photo upload is available on mobile app. For now, you can submit without photos.",
+      "Photo Update",
+      "Photo updates are available on mobile app. You can submit with existing photos.",
     );
   };
 
@@ -201,22 +266,12 @@ export default function AddPropertyScreen() {
         return;
       }
 
-      // Get user ID from profile
-      const userId = profile?._id;
-
-      if (!userId) {
-        showToast("Error", "User ID not found. Please log in again.", "error");
-        setLoading(false);
-        return;
-      }
-
       const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.token}`,
       };
 
       const payload = {
-        owner_id: userId,
         property_type: propertyData.property_type,
         title: propertyData.title,
         description: propertyData.description,
@@ -240,41 +295,19 @@ export default function AddPropertyScreen() {
         images: propertyData.images,
       };
 
-      const response = await fetch("http://localhost:5000/api/properties", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/properties/${propertyId}`,
+        {
+          method: "PUT",
+          headers,
+          body: JSON.stringify(payload),
+        },
+      );
 
       const data = await response.json();
 
       if (data.success) {
-        showToast(
-          "✓ Success",
-          "Property created successfully! Your listing is now live.",
-          "success",
-        );
-
-        // Reset form after successful submission
-        setPropertyData({
-          property_type: "",
-          title: "",
-          price: "",
-          description: "",
-          location: {
-            area: "",
-            city: "",
-            country: "Bangladesh",
-          },
-          specs: {
-            bedrooms: "",
-            bathrooms: "",
-            area_sqft: "",
-            balconies: "",
-          },
-          amenities: [],
-          images: [],
-        });
+        showToast("✓ Success", "Property updated successfully!", "success");
 
         // Navigate back after a short delay
         setTimeout(() => {
@@ -283,11 +316,11 @@ export default function AddPropertyScreen() {
       } else {
         const errorMessage =
           data.message ||
-          "Failed to create property. Please check your details and try again.";
+          "Failed to update property. Please check your details and try again.";
         showToast("✗ Error", errorMessage, "error");
       }
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Update error:", error);
       showToast(
         "✗ Error",
         error.message || "An error occurred. Please try again.",
@@ -319,7 +352,7 @@ export default function AddPropertyScreen() {
             color={isDark ? "#fff" : "#333"}
           />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Post Your Property</ThemedText>
+        <ThemedText style={styles.headerTitle}>Update Property</ThemedText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -635,13 +668,11 @@ export default function AddPropertyScreen() {
           />
           <ThemedText style={styles.photoButtonText}>
             {propertyData.images.length > 0
-              ? `${propertyData.images.length} photo${propertyData.images.length !== 1 ? "s" : ""} selected`
-              : "Add Photos"}
+              ? `${propertyData.images.length} photo${propertyData.images.length !== 1 ? "s" : ""} uploaded`
+              : "No Photos"}
           </ThemedText>
           <ThemedText style={styles.photoSubText}>
-            {propertyData.images.length === 0
-              ? "Tap to add up to 5 photos"
-              : "Tap to add more photos"}
+            Photo updates available on mobile
           </ThemedText>
         </TouchableOpacity>
 
@@ -682,7 +713,7 @@ export default function AddPropertyScreen() {
             <ActivityIndicator color="#fff" />
           ) : (
             <ThemedText style={styles.createButtonText}>
-              Create Property
+              Update Property
             </ThemedText>
           )}
         </TouchableOpacity>
@@ -709,16 +740,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
-  },
-  stepIndicator: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  stepText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#9CA3AF",
-    letterSpacing: 1,
   },
   scrollContent: {
     paddingHorizontal: 16,

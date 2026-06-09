@@ -72,6 +72,20 @@ export default function RootLayout() {
             animationEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="add-property"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
+        <Stack.Screen
+          name="update-property"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
       </Stack>
       <Toast />
     </>
