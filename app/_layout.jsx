@@ -86,6 +86,13 @@ export default function RootLayout() {
             animationEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="admin-dashboard"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
       </Stack>
       <Toast />
     </>
