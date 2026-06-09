@@ -1,12 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import { getAuthSession } from "../utils/authSession";
@@ -89,21 +89,30 @@ export default function UserDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.menuButton} onPress={() => router.back()}>
-            <MaterialCommunityIcons name="menu" size={24} color="#08324A" />
+          <TouchableOpacity
+            style={styles.menuButton}
+            onPress={() => router.push("/tabs/home")}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color="#0D9488"
+            />
           </TouchableOpacity>
-          <Text style={styles.brand}>BashaFinder</Text>
+          <Text style={styles.brand}>VaraLagbe</Text>
           <TouchableOpacity
             style={styles.avatar}
             onPress={() => router.push("/tabs/profile")}
           >
-            <MaterialCommunityIcons name="face-woman" size={30} color="#F7B279" />
+            <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.greeting}>
           <Text style={styles.greetingTitle}>Hello, {firstName}</Text>
-          <Text style={styles.greetingText}>Find your next sanctuary in Dhaka.</Text>
+          <Text style={styles.greetingText}>
+            Find your next sanctuary in Dhaka.
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -113,16 +122,28 @@ export default function UserDashboardScreen() {
         >
           <View style={styles.exploreLeft}>
             <View style={styles.compass}>
-              <MaterialCommunityIcons name="compass" size={16} color="#064F60" />
+              <MaterialCommunityIcons
+                name="compass"
+                size={16}
+                color="#064F60"
+              />
             </View>
             <Text style={styles.exploreText}>Explore Properties</Text>
           </View>
-          <MaterialCommunityIcons name="arrow-right" size={26} color="#FFFFFF" />
+          <MaterialCommunityIcons
+            name="arrow-right"
+            size={26}
+            color="#FFFFFF"
+          />
         </TouchableOpacity>
 
         <View style={styles.shortcutRow}>
           <TouchableOpacity style={styles.shortcutCard} activeOpacity={0.86}>
-            <MaterialCommunityIcons name="calendar-blank" size={25} color="#08324A" />
+            <MaterialCommunityIcons
+              name="calendar-blank"
+              size={25}
+              color="#08324A"
+            />
             <Text style={styles.shortcutText}>My Bookings</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -147,9 +168,15 @@ export default function UserDashboardScreen() {
           </View>
           <View style={styles.reservationBody}>
             <Text style={styles.overline}>ACTIVE RESERVATION</Text>
-            <Text style={styles.reservationTitle}>The Nordic Suite, Banani</Text>
+            <Text style={styles.reservationTitle}>
+              The Nordic Suite, Banani
+            </Text>
             <View style={styles.dateRow}>
-              <MaterialCommunityIcons name="calendar-star" size={14} color="#163240" />
+              <MaterialCommunityIcons
+                name="calendar-star"
+                size={14}
+                color="#163240"
+              />
               <Text style={styles.dateText}>Oct 24 - Oct 29, 2023</Text>
             </View>
             <View style={styles.divider} />
@@ -158,7 +185,10 @@ export default function UserDashboardScreen() {
                 <Text style={styles.paymentLabel}>Total Payment</Text>
                 <Text style={styles.paymentValue}>৳45,000</Text>
               </View>
-              <TouchableOpacity style={styles.detailsButton} activeOpacity={0.86}>
+              <TouchableOpacity
+                style={styles.detailsButton}
+                activeOpacity={0.86}
+              >
                 <Text style={styles.detailsText}>View Details</Text>
               </TouchableOpacity>
             </View>
@@ -180,8 +210,14 @@ export default function UserDashboardScreen() {
               activeOpacity={0.86}
               onPress={() => router.push("/tabs/search")}
             >
-              <View style={[styles.searchIcon, { backgroundColor: item.color }]}>
-                <MaterialCommunityIcons name={item.icon} size={22} color="#123640" />
+              <View
+                style={[styles.searchIcon, { backgroundColor: item.color }]}
+              >
+                <MaterialCommunityIcons
+                  name={item.icon}
+                  size={22}
+                  color="#123640"
+                />
               </View>
               <View style={styles.searchCopy}>
                 <Text style={styles.searchTitle}>{item.title}</Text>
@@ -195,7 +231,12 @@ export default function UserDashboardScreen() {
         <View style={styles.activityList}>
           {ACTIVITIES.map((activity) => (
             <View key={activity.id} style={styles.activityItem}>
-              <View style={[styles.activityIcon, { backgroundColor: activity.color }]}>
+              <View
+                style={[
+                  styles.activityIcon,
+                  { backgroundColor: activity.color },
+                ]}
+              >
                 <MaterialCommunityIcons
                   name={activity.icon}
                   size={22}
@@ -229,8 +270,17 @@ export default function UserDashboardScreen() {
 
           {MESSAGES.map((message) => (
             <View key={message.id} style={styles.messageRow}>
-              <View style={[styles.messageAvatar, { backgroundColor: message.color }]}>
-                <MaterialCommunityIcons name={message.icon} size={31} color="#FFFFFF" />
+              <View
+                style={[
+                  styles.messageAvatar,
+                  { backgroundColor: message.color },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={message.icon}
+                  size={31}
+                  color="#FFFFFF"
+                />
               </View>
               <View style={styles.onlineDot} />
               <View style={styles.messageCopy}>
@@ -241,7 +291,11 @@ export default function UserDashboardScreen() {
                 <Text style={styles.messagePreview}>{message.preview}</Text>
                 {message.meta ? (
                   <View style={styles.messageMeta}>
-                    <MaterialCommunityIcons name="office-building" size={12} color="#064F60" />
+                    <MaterialCommunityIcons
+                      name="office-building"
+                      size={12}
+                      color="#064F60"
+                    />
                     <Text style={styles.messageMetaText}>{message.meta}</Text>
                   </View>
                 ) : null}
@@ -260,7 +314,10 @@ export default function UserDashboardScreen() {
           <MaterialCommunityIcons name="home" size={22} color="#064F60" />
           <Text style={styles.navTextActive}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/tabs/search")}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/tabs/search")}
+        >
           <MaterialCommunityIcons name="magnify" size={24} color="#516884" />
           <Text style={styles.navText}>Search</Text>
         </TouchableOpacity>
@@ -268,7 +325,10 @@ export default function UserDashboardScreen() {
           <MaterialCommunityIcons name="calendar" size={23} color="#516884" />
           <Text style={styles.navText}>Bookings</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push("/tabs/profile")}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/tabs/profile")}
+        >
           <MaterialCommunityIcons name="account" size={22} color="#516884" />
           <Text style={styles.navText}>Profile</Text>
         </TouchableOpacity>
@@ -294,25 +354,25 @@ const styles = StyleSheet.create({
     marginBottom: 42,
   },
   menuButton: {
-    width: 34,
-    height: 34,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 8,
+    backgroundColor: "rgba(13, 148, 136, 0.1)",
     marginRight: 8,
   },
   brand: {
     flex: 1,
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#08324A",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#063F52",
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: 3,
-    borderColor: "#08324A",
-    backgroundColor: "#F1A987",
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: "#0D9488",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
