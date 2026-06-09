@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
+    ActivityIndicator,
     Image,
     ScrollView,
     StyleSheet,
@@ -10,45 +12,86 @@ import {
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import useColorScheme from "../hooks/useColorScheme";
+import { getAuthSession } from "../utils/authSession";
+import { showToast } from "../utils/toast";
 
-const LISTINGS = [
-  {
-    id: "elysian-heights",
-    title: "Elysian Heights Penthouse",
-    location: "Gulshan 2, Dhaka",
-    rent: "৳85,000",
-    type: "3 BHK",
-    status: "AVAILABLE",
-    active: true,
-    image: require("../../assets/images/gulshan.jpg"),
-  },
-  {
-    id: "urban-oasis",
-    title: "Urban Oasis Studio",
-    location: "Banani Road 11, Dhaka",
-    rent: "৳32,000",
-    type: "Studio",
-    status: "OCCUPIED",
-    active: false,
-    image: require("../../assets/images/banani.jpeg"),
-  },
-  {
-    id: "dhanmondi-lakeview",
-    title: "Dhanmondi Lakeview Loft",
-    location: "Dhanmondi 12/A, Dhaka",
-    rent: "৳45,000",
-    type: "2 BHK",
-    status: "AVAILABLE",
-    active: true,
-    image: require("../../assets/images/dhanmodi.jpg"),
-  },
-];
+const API_BASE_URL = "http://localhost:5000";
 
 export default function OwnerDashboardScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
-
   const isDark = colorScheme === "dark";
+
+  const [properties, setProperties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalAssets, setTotalAssets] = useState(0);
+  const [activeProperties, setActiveProperties] = useState(0);
+
+  const loadOwnerProperties = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const session = getAuthSession();
+
+      if (!session?.token || !session?.user?._id) {
+        showToast("Error", "Authentication required", "error");
+        router.replace("/login");
+        setIsLoading(false);
+        return;
+      }
+
+      const ownerId = session.user._id;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/properties?owner_id=${ownerId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.token}`,
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to load properties");
+      }
+
+      const ownerProperties = data.data || [];
+      setProperties(ownerProperties);
+      setTotalAssets(ownerProperties.length);
+
+      // Count active properties (availability)
+      const active = ownerProperties.filter(
+        (prop) => prop.availability === "available",
+      ).length;
+      setActiveProperties(active);
+    } catch (error) {
+      console.error("Load properties error:", error);
+      showToast("Error", error.message || "Could not load properties", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  // Reload properties when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      loadOwnerProperties();
+    }, [loadOwnerProperties]),
+  );
+
+  const formatPropertyForDisplay = (property) => {
+    return {
+      id: property._id,
+      title: property.title,
+      location: `${property.location?.area}, ${property.location?.city}`,
+      rent: `৳${property.price?.monthly_rent?.toLocaleString() || 0}`,
+      type: `${property.specs?.bedrooms || 0} BHK`,
+      status: property.availability === "available" ? "AVAILABLE" : "OCCUPIED",
+      active: property.availability === "available",
+      image: require("../../assets/images/gulshan.jpg"), // Default image - can be updated to use property.images[0]
+    };
+  };
   return (
     <ThemedView style={styles.screen}>
       <ScrollView
@@ -97,13 +140,18 @@ export default function OwnerDashboardScreen() {
 
         <View style={styles.totalCard}>
           <Text style={styles.metricLabelDark}>Total Assets</Text>
-          <Text style={styles.totalValue}>12</Text>
+          <Text style={styles.totalValue}>{totalAssets}</Text>
         </View>
 
         <View style={styles.revenueCard}>
           <View>
             <Text style={styles.metricLabelLight}>Monthly Revenue</Text>
-            <Text style={styles.revenueValue}>৳142k</Text>
+            <Text style={styles.revenueValue}>
+              ৳
+              {properties
+                .reduce((sum, prop) => sum + (prop.price?.monthly_rent || 0), 0)
+                .toLocaleString()}
+            </Text>
           </View>
           <MaterialCommunityIcons
             name="cash-multiple"
@@ -114,89 +162,118 @@ export default function OwnerDashboardScreen() {
 
         <View style={styles.occupancyCard}>
           <Text style={styles.metricLabelDark}>Active Occupancy</Text>
-          <Text style={styles.occupancyValue}>92%</Text>
+          <Text style={styles.occupancyValue}>
+            {totalAssets > 0
+              ? Math.round(((activeProperties || 0) / totalAssets) * 100)
+              : 0}
+            %
+          </Text>
         </View>
 
-        {LISTINGS.map((listing) => (
-          <View key={listing.id} style={styles.listingCard}>
-            <View style={styles.imageWrap}>
-              <Image source={listing.image} style={styles.listingImage} />
-              <View
-                style={[
-                  styles.statusPill,
-                  listing.active ? styles.availablePill : styles.occupiedPill,
-                ]}
-              >
-                <Text style={styles.statusPillText}>{listing.status}</Text>
-              </View>
-            </View>
-
-            <View style={styles.listingBody}>
-              <Text style={styles.listingTitle}>{listing.title}</Text>
-              <View style={styles.locationRow}>
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={13}
-                  color="#27343A"
-                />
-                <Text style={styles.locationText}>{listing.location}</Text>
-              </View>
-
-              <View style={styles.statusRow}>
-                <Text style={styles.smallLabel}>STATUS</Text>
-                <View style={styles.switchTrack}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#0D9488" />
+            <Text style={styles.loadingText}>Loading your properties...</Text>
+          </View>
+        ) : properties.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons
+              name="home-outline"
+              size={48}
+              color="#9CA3AF"
+            />
+            <Text style={styles.emptyText}>No properties yet</Text>
+            <Text style={styles.emptySubText}>
+              Post a new property to get started
+            </Text>
+          </View>
+        ) : (
+          properties.map((property) => {
+            const display = formatPropertyForDisplay(property);
+            return (
+              <View key={display.id} style={styles.listingCard}>
+                <View style={styles.imageWrap}>
+                  <Image source={display.image} style={styles.listingImage} />
                   <View
                     style={[
-                      styles.switchThumb,
-                      listing.active ? styles.switchOn : styles.switchOff,
+                      styles.statusPill,
+                      display.active
+                        ? styles.availablePill
+                        : styles.occupiedPill,
                     ]}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.listingFooter}>
-                <View style={styles.listingMeta}>
-                  <View style={styles.detailBlock}>
-                    <Text style={styles.smallLabel}>RENT</Text>
-                    <Text style={styles.detailValue} numberOfLines={1}>
-                      {listing.rent}
-                    </Text>
-                  </View>
-                  <View style={styles.detailBlock}>
-                    <Text style={styles.smallLabel}>TYPE</Text>
-                    <Text style={styles.detailValue} numberOfLines={1}>
-                      {listing.type}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/update-property",
-                        params: { propertyId: listing.id },
-                      })
-                    }
                   >
+                    <Text style={styles.statusPillText}>{display.status}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.listingBody}>
+                  <Text style={styles.listingTitle}>{display.title}</Text>
+                  <View style={styles.locationRow}>
                     <MaterialCommunityIcons
-                      name="pencil"
-                      size={20}
-                      color="#17262C"
+                      name="map-marker"
+                      size={13}
+                      color="#27343A"
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionButton}>
-                    <MaterialCommunityIcons
-                      name="trash-can-outline"
-                      size={21}
-                      color="#17262C"
-                    />
-                  </TouchableOpacity>
+                    <Text style={styles.locationText}>{display.location}</Text>
+                  </View>
+
+                  <View style={styles.statusRow}>
+                    <Text style={styles.smallLabel}>STATUS</Text>
+                    <View style={styles.switchTrack}>
+                      <View
+                        style={[
+                          styles.switchThumb,
+                          display.active ? styles.switchOn : styles.switchOff,
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.listingFooter}>
+                    <View style={styles.listingMeta}>
+                      <View style={styles.detailBlock}>
+                        <Text style={styles.smallLabel}>RENT</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>
+                          {display.rent}
+                        </Text>
+                      </View>
+                      <View style={styles.detailBlock}>
+                        <Text style={styles.smallLabel}>TYPE</Text>
+                        <Text style={styles.detailValue} numberOfLines={1}>
+                          {display.type}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() =>
+                          router.push({
+                            pathname: "/update-property",
+                            params: { propertyId: display.id },
+                          })
+                        }
+                      >
+                        <MaterialCommunityIcons
+                          name="pencil"
+                          size={20}
+                          color="#17262C"
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.actionButton}>
+                        <MaterialCommunityIcons
+                          name="trash-can-outline"
+                          size={21}
+                          color="#17262C"
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
                 </View>
               </View>
-            </View>
-          </View>
-        ))}
+            );
+          })
+        )}
       </ScrollView>
 
       <View style={styles.bottomNav}>
@@ -527,5 +604,35 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "#FFFFFF",
     fontWeight: "800",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#374151",
+    marginTop: 12,
+  },
+  emptySubText: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginTop: 6,
+    textAlign: "center",
   },
 });
