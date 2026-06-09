@@ -1,12 +1,12 @@
-import {
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import {
+    Image,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
