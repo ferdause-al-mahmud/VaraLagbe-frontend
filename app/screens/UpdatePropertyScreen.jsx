@@ -309,9 +309,12 @@ export default function UpdatePropertyScreen() {
       if (data.success) {
         showToast("✓ Success", "Property updated successfully!", "success");
 
-        // Navigate back after a short delay
+        // Navigate to property details after a short delay
         setTimeout(() => {
-          router.back();
+          router.push({
+            pathname: "/property-details",
+            params: { propertyId: propertyId },
+          });
         }, 1500);
       } else {
         const errorMessage =

@@ -2,19 +2,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import {
-  clearAuthSession,
-  getAuthSession,
-  setAuthSession,
-} from "../utils/authSession";
 import useColorScheme from "../hooks/useColorScheme";
+import {
+    clearAuthSession,
+    getAuthSession,
+    setAuthSession,
+} from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
 
@@ -187,8 +187,8 @@ export default function OwnerProfileScreen() {
           >
             <MaterialCommunityIcons
               name="arrow-left"
-              size={27}
-              color={isDark ? "#fff" : "#333"}
+              size={24}
+              color="#0D9488"
             />
           </TouchableOpacity>
           <Text style={styles.brand}>VaraLagbe</Text>
@@ -384,10 +384,12 @@ const styles = StyleSheet.create({
     marginBottom: 42,
   },
   menuButton: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 8,
+    backgroundColor: "rgba(13, 148, 136, 0.1)",
   },
   brand: {
     flex: 1,

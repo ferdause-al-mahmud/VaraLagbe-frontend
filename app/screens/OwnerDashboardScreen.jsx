@@ -105,8 +105,8 @@ export default function OwnerDashboardScreen() {
           >
             <MaterialCommunityIcons
               name="arrow-left"
-              size={27}
-              color={isDark ? "#fff" : "#333"}
+              size={24}
+              color="#0D9488"
             />{" "}
           </TouchableOpacity>
           <Text style={styles.brandText}>VaraLagbe</Text>
@@ -329,11 +329,13 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   iconButton: {
-    width: 34,
-    height: 34,
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
+    borderRadius: 8,
+    backgroundColor: "rgba(13, 148, 136, 0.1)",
   },
   brandText: {
     flex: 1,
