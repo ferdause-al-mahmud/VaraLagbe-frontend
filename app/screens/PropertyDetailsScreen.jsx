@@ -1,14 +1,17 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   Dimensions,
   FlatList,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -16,9 +19,32 @@ import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+import { getAuthSession } from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
 const { width } = Dimensions.get("window");
+
+function showMessage(title, message) {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.alert(`${title}\n\n${message}`);
+    return;
+  }
+
+  Alert.alert(title, message);
+}
+
+function getDefaultDate(offsetDays) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  return date.toISOString().slice(0, 10);
+}
+
+function getNightCount(checkInDate, checkOutDate) {
+  const checkIn = new Date(checkInDate);
+  const checkOut = new Date(checkOutDate);
+  const diff = checkOut.getTime() - checkIn.getTime();
+  return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
 
 export default function PropertyDetailsScreen() {
   const router = useRouter();
@@ -32,6 +58,12 @@ export default function PropertyDetailsScreen() {
   const [error, setError] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [checkInDate, setCheckInDate] = useState(getDefaultDate(1));
+  const [checkOutDate, setCheckOutDate] = useState(getDefaultDate(2));
+  const [adultGuests, setAdultGuests] = useState("1");
+  const [childGuests, setChildGuests] = useState("0");
+  const [specialRequests, setSpecialRequests] = useState("");
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   useEffect(() => {
     fetchPropertyDetails();
@@ -95,6 +127,98 @@ export default function PropertyDetailsScreen() {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const currentIndex = Math.round(contentOffsetX / width);
     setActiveImageIndex(currentIndex);
+  };
+
+  const nightlyRate = Math.max(
+    1,
+    Math.ceil((property.price?.monthly_rent || 0) / 30),
+  );
+  const numberOfNights = getNightCount(checkInDate, checkOutDate);
+  const totalAmount = nightlyRate * numberOfNights;
+
+  const handleCreateBooking = async () => {
+    const session = getAuthSession();
+
+    if (!session?.token) {
+      showMessage("Login Required", "Please log in before booking a property.");
+      router.push("/login");
+      return;
+    }
+
+    if (new Date(checkInDate) >= new Date(checkOutDate)) {
+      showMessage(
+        "Invalid Dates",
+        "Check-out date must be after check-in date.",
+      );
+      return;
+    }
+
+    const adults = parseInt(adultGuests, 10);
+    const children = parseInt(childGuests, 10) || 0;
+
+    if (!adults || adults < 1) {
+      showMessage("Invalid Guests", "At least one adult guest is required.");
+      return;
+    }
+
+    if (!property.owner_id) {
+      showMessage(
+        "Booking Unavailable",
+        "This property does not have a valid host attached.",
+      );
+      return;
+    }
+
+    setBookingLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.token}`,
+        },
+        body: JSON.stringify({
+          propertyId: property._id,
+          propertyTitle: property.title,
+          propertyImage: property.images?.[0] || null,
+          propertyType: property.property_type || "PREMIUM STAY",
+          hostId: property.owner_id,
+          hostName: property.host?.name || "Property Host",
+          hostAvatar: property.host?.avatar || null,
+          hostRating: property.rating || 0,
+          hostReviews: property.reviews || 0,
+          checkInDate,
+          checkOutDate,
+          guests: {
+            adults,
+            children,
+          },
+          price: {
+            totalAmount,
+            currency: property.price?.currency || "BDT",
+            nightlyRate,
+            numberOfNights,
+          },
+          specialRequests,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create booking.");
+      }
+
+      router.push(`/tabs/booking?bookingId=${data.data._id}`);
+    } catch (err) {
+      showMessage(
+        "Booking Failed",
+        err.message || "Could not complete your booking. Please try again.",
+      );
+    } finally {
+      setBookingLoading(false);
+    }
   };
 
   const ImageGallery = () => (
@@ -409,14 +533,122 @@ export default function PropertyDetailsScreen() {
             </View>
           )}
 
+          <View style={styles.section}>
+            <ThemedText type="subtitle" style={styles.sectionTitle}>
+              Book this property
+            </ThemedText>
+            <View style={styles.bookingGrid}>
+              <View style={styles.bookingField}>
+                <ThemedText style={styles.bookingLabel}>Check-in</ThemedText>
+                <TextInput
+                  style={[
+                    styles.bookingInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? colors.cardBackground : "#fff",
+                    },
+                  ]}
+                  value={checkInDate}
+                  onChangeText={setCheckInDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.bookingField}>
+                <ThemedText style={styles.bookingLabel}>Check-out</ThemedText>
+                <TextInput
+                  style={[
+                    styles.bookingInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? colors.cardBackground : "#fff",
+                    },
+                  ]}
+                  value={checkOutDate}
+                  onChangeText={setCheckOutDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <View style={styles.bookingField}>
+                <ThemedText style={styles.bookingLabel}>Adults</ThemedText>
+                <TextInput
+                  style={[
+                    styles.bookingInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? colors.cardBackground : "#fff",
+                    },
+                  ]}
+                  value={adultGuests}
+                  onChangeText={setAdultGuests}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={styles.bookingField}>
+                <ThemedText style={styles.bookingLabel}>Children</ThemedText>
+                <TextInput
+                  style={[
+                    styles.bookingInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: isDark ? colors.cardBackground : "#fff",
+                    },
+                  ]}
+                  value={childGuests}
+                  onChangeText={setChildGuests}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            <TextInput
+              style={[
+                styles.bookingInput,
+                styles.requestsInput,
+                {
+                  color: colors.text,
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? colors.cardBackground : "#fff",
+                },
+              ]}
+              value={specialRequests}
+              onChangeText={setSpecialRequests}
+              placeholder="Special requests"
+              placeholderTextColor="#999"
+              multiline
+            />
+            <View style={styles.bookingTotalRow}>
+              <ThemedText style={styles.bookingTotalLabel}>
+                {numberOfNights} night{numberOfNights === 1 ? "" : "s"}
+              </ThemedText>
+              <ThemedText style={[styles.bookingTotal, { color: colors.tint }]}>
+                BDT {totalAmount.toLocaleString()}
+              </ThemedText>
+            </View>
+          </View>
+
           {/* Contact Button */}
           <View style={styles.actionContainer}>
             <TouchableOpacity
               style={[styles.contactButton, { backgroundColor: colors.tint }]}
+              onPress={handleCreateBooking}
+              disabled={bookingLoading}
             >
-              <MaterialCommunityIcons name="phone" size={20} color="#fff" />
+              {bookingLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <MaterialCommunityIcons
+                  name="calendar-check"
+                  size={20}
+                  color="#fff"
+                />
+              )}
               <ThemedText style={styles.contactButtonText}>
-                Contact Host
+                {bookingLoading ? "Booking..." : "Confirm Booking"}
               </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
@@ -698,6 +930,48 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#999",
     marginTop: 4,
+  },
+  bookingGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  bookingField: {
+    flexBasis: "48%",
+    flexGrow: 1,
+  },
+  bookingLabel: {
+    fontSize: 12,
+    color: "#777",
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  bookingInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  requestsInput: {
+    minHeight: 76,
+    textAlignVertical: "top",
+  },
+  bookingTotalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  bookingTotalLabel: {
+    fontSize: 13,
+    color: "#777",
+    fontWeight: "600",
+  },
+  bookingTotal: {
+    fontSize: 18,
+    fontWeight: "700",
   },
   actionContainer: {
     flexDirection: "row",

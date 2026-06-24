@@ -1,51 +1,241 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
+import { getAuthSession } from "../utils/authSession";
+
+const API_BASE_URL = "http://localhost:5000";
+const fallbackImage = require("../../assets/images/dhanmodi.jpg");
+
+function formatDateRange(checkInDate, checkOutDate) {
+  if (!checkInDate || !checkOutDate) return "Dates unavailable";
+
+  const options = { month: "short", day: "numeric", year: "numeric" };
+  const checkIn = new Date(checkInDate).toLocaleDateString("en-US", options);
+  const checkOut = new Date(checkOutDate).toLocaleDateString("en-US", options);
+  return `${checkIn} - ${checkOut}`;
+}
+
+function formatGuests(guests) {
+  const adults = guests?.adults || 0;
+  const children = guests?.children || 0;
+  const adultLabel = `${adults} adult${adults === 1 ? "" : "s"}`;
+  const childLabel = `${children} child${children === 1 ? "" : "ren"}`;
+  return children > 0 ? `${adultLabel}, ${childLabel}` : adultLabel;
+}
+
+function getImageSource(uri) {
+  return uri ? { uri } : fallbackImage;
+}
 
 export default function BookingScreen() {
   const router = useRouter();
+  const { bookingId } = useLocalSearchParams();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  // Static booking data
-  const bookingData = {
-    id: "BK123456",
-    property: {
-      id: "P1",
-      title: "Luxury 3BHK Apartment",
-      image: require("../../assets/images/dhanmodi.jpg"),
-      type: "PREMIUM STAY",
-    },
-    dates: {
-      checkIn: "Oct 12 - Oct 15, 2023",
-      guests: "4 Adults, 2 Children",
-    },
-    price: {
-      amount: 45500,
-      currency: "BDT",
-      payment: "Securely processed via Slotcommerz",
-    },
-    host: {
-      name: "Anisur Rahman",
-      avatar: require("../../assets/images/banani.jpeg"),
-      rating: 4.9,
-      reviews: 128,
-      verified: true,
-    },
-  };
+  const [booking, setBooking] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadBookings = useCallback(async () => {
+    const session = getAuthSession();
+
+    if (!bookingId && !session?.user) {
+      router.replace("/login");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const url = bookingId
+        ? `${API_BASE_URL}/api/bookings/${bookingId}`
+        : `${API_BASE_URL}/api/bookings/user/${session.user._id || session.user.id}`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to load bookings.");
+      }
+
+      if (bookingId) {
+        setBooking(data.data);
+        setBookings([]);
+      } else {
+        setBookings(data.data || []);
+        setBooking(null);
+      }
+    } catch (err) {
+      setError(err.message || "Failed to load bookings.");
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId, router]);
+
+  useEffect(() => {
+    loadBookings();
+  }, [loadBookings]);
+
+  const BookingCard = ({ item, compact = false }) => (
+    <View
+      style={[
+        styles.propertyCard,
+        {
+          backgroundColor: isDark ? "#1F2937" : "#F3F4F6",
+          borderColor: isDark ? "#374151" : "#E5E7EB",
+        },
+      ]}
+    >
+      <View style={styles.propertyImageContainer}>
+        <Image
+          source={getImageSource(item.propertyImage)}
+          style={styles.propertyImage}
+          resizeMode="cover"
+        />
+        <View style={styles.typeBadge}>
+          <ThemedText style={styles.typeText}>
+            {item.propertyType || "BOOKING"}
+          </ThemedText>
+        </View>
+      </View>
+      <View style={styles.propertyInfo}>
+        <View style={styles.bookingTitleRow}>
+          <ThemedText style={styles.propertyName}>
+            {item.propertyTitle}
+          </ThemedText>
+          <View style={styles.statusPill}>
+            <ThemedText style={styles.statusPillText}>
+              {item.bookingStatus}
+            </ThemedText>
+          </View>
+        </View>
+        <ThemedText style={styles.metaText}>{item.bookingId}</ThemedText>
+        <View style={styles.inlineMeta}>
+          <MaterialCommunityIcons
+            name="calendar"
+            size={17}
+            color={isDark ? "#4DB8C4" : "#007B8A"}
+          />
+          <ThemedText style={styles.infoValue}>
+            {formatDateRange(item.checkInDate, item.checkOutDate)}
+          </ThemedText>
+        </View>
+        <View style={styles.inlineMeta}>
+          <MaterialCommunityIcons
+            name="account-multiple"
+            size={17}
+            color={isDark ? "#4DB8C4" : "#007B8A"}
+          />
+          <ThemedText style={styles.infoValue}>{formatGuests(item.guests)}</ThemedText>
+        </View>
+        <View style={styles.cardFooterRow}>
+          <ThemedText style={styles.hostText}>Host: {item.hostName}</ThemedText>
+          <ThemedText style={styles.cardAmount}>
+            {item.price?.currency || "BDT"} {item.price?.totalAmount?.toLocaleString() || 0}
+          </ThemedText>
+        </View>
+        {compact && (
+          <TouchableOpacity
+            style={styles.detailsButton}
+            onPress={() => router.push(`/tabs/booking?bookingId=${item._id}`)}
+          >
+            <ThemedText style={styles.detailsButtonText}>View Details</ThemedText>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderConfirmation = () => (
+    <>
+      <View style={styles.iconContainer}>
+        <View style={styles.checkIconBg}>
+          <MaterialCommunityIcons name="check" size={40} color="#fff" />
+        </View>
+      </View>
+
+      <ThemedText style={styles.successMessage}>Booking Confirmed</ThemedText>
+      <ThemedText
+        style={[
+          styles.successSubtext,
+          {
+            color: isDark ? "#9CA3AF" : "#4B5563",
+          },
+        ]}
+      >
+        Your reservation at {booking.propertyTitle} has been confirmed.
+      </ThemedText>
+
+      <BookingCard item={booking} />
+
+      <View
+        style={[
+          styles.amountSection,
+          {
+            backgroundColor: isDark ? "#134E4A" : "#0D9488",
+          },
+        ]}
+      >
+        <ThemedText style={styles.amountLabel}>TOTAL AMOUNT PAID</ThemedText>
+        <ThemedText style={styles.amountValue}>
+          {booking.price?.currency || "BDT"} {booking.price?.totalAmount?.toLocaleString() || 0}
+        </ThemedText>
+        <View style={styles.securityInfo}>
+          <MaterialCommunityIcons name="shield-check" size={16} color="#fff" />
+          <ThemedText style={styles.securityText}>
+            Securely processed via {booking.payment?.method || "Slotcommerz"}
+          </ThemedText>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.primaryButton}
+        onPress={() => router.replace("/tabs/home")}
+      >
+        <ThemedText style={styles.primaryButtonText}>Back to Home</ThemedText>
+      </TouchableOpacity>
+    </>
+  );
+
+  const renderBookingList = () => (
+    <>
+      <ThemedText style={styles.pageTitle}>My Bookings</ThemedText>
+      {bookings.length > 0 ? (
+        bookings.map((item) => (
+          <BookingCard key={item._id} item={item} compact />
+        ))
+      ) : (
+        <View style={styles.emptyState}>
+          <MaterialCommunityIcons
+            name="calendar-search"
+            size={48}
+            color={isDark ? "#4DB8C4" : "#007B8A"}
+          />
+          <ThemedText style={styles.emptyTitle}>No bookings yet</ThemedText>
+          <ThemedText style={styles.emptyText}>
+            Confirm a property booking and it will appear here.
+          </ThemedText>
+        </View>
+      )}
+    </>
+  );
 
   return (
     <ThemedView style={styles.container}>
-      {/* Header */}
       <View
         style={[
           styles.header,
@@ -54,264 +244,45 @@ export default function BookingScreen() {
           },
         ]}
       >
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
           <MaterialCommunityIcons
-            name="close"
+            name={bookingId ? "close" : "arrow-left"}
             size={24}
             color={isDark ? "#fff" : "#333"}
           />
         </TouchableOpacity>
-        <ThemedText style={styles.headerTitle}>Booking Confirmed</ThemedText>
-        <View style={{ width: 24 }} />
+        <ThemedText style={styles.headerTitle}>
+          {bookingId ? "Booking Confirmed" : "Bookings"}
+        </ThemedText>
+        <TouchableOpacity style={styles.closeButton} onPress={loadBookings}>
+          <MaterialCommunityIcons
+            name="refresh"
+            size={22}
+            color={isDark ? "#fff" : "#333"}
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Confirmation Icon */}
-        <View style={styles.iconContainer}>
-          <View style={styles.checkIconBg}>
-            <MaterialCommunityIcons name="check" size={40} color="#fff" />
+        {loading ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={isDark ? "#4DB8C4" : "#007B8A"} />
           </View>
-        </View>
-
-        {/* Success Message */}
-        <ThemedText style={styles.successMessage}>
-          You&apos;re all set!
-        </ThemedText>
-        <ThemedText
-          style={[
-            styles.successSubtext,
-            {
-              color: isDark ? "#9CA3AF" : "#4B5563",
-            },
-          ]}
-        >
-          Your reservation at the {bookingData.property.title} has been
-          confirmed.
-        </ThemedText>
-
-        {/* Property Card */}
-        <View
-          style={[
-            styles.propertyCard,
-            {
-              backgroundColor: isDark ? "#1F2937" : "#F3F4F6",
-              borderColor: isDark ? "#374151" : "#E5E7EB",
-            },
-          ]}
-        >
-          <View style={styles.propertyImageContainer}>
-            <Image
-              source={bookingData.property.image}
-              style={styles.propertyImage}
-              resizeMode="cover"
-            />
-            <View style={styles.typeBadge}>
-              <ThemedText style={styles.typeText}>
-                {bookingData.property.type}
-              </ThemedText>
-            </View>
+        ) : error ? (
+          <View style={styles.centerContainer}>
+            <ThemedText style={styles.errorText}>{error}</ThemedText>
+            <TouchableOpacity style={styles.primaryButton} onPress={loadBookings}>
+              <ThemedText style={styles.primaryButtonText}>Retry</ThemedText>
+            </TouchableOpacity>
           </View>
-          <View style={styles.propertyInfo}>
-            <ThemedText style={styles.propertyName}>
-              {bookingData.property.title}
-            </ThemedText>
-          </View>
-        </View>
-
-        {/* Reservation Info Section */}
-        <View style={styles.section}>
-          <ThemedText style={styles.sectionTitle}>RESERVATION INFO</ThemedText>
-
-          <View
-            style={[
-              styles.infoRow,
-              {
-                borderBottomColor: isDark ? "#374151" : "#E5E7EB",
-              },
-            ]}
-          >
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons
-                name="calendar"
-                size={20}
-                color={isDark ? "#4DB8C4" : "#007B8A"}
-              />
-              <View style={styles.infoText}>
-                <ThemedText
-                  style={[
-                    styles.infoLabel,
-                    {
-                      color: isDark ? "#9CA3AF" : "#6B7280",
-                    },
-                  ]}
-                >
-                  Dates
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {bookingData.dates.checkIn}
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <MaterialCommunityIcons
-                name="account-multiple"
-                size={20}
-                color={isDark ? "#4DB8C4" : "#007B8A"}
-              />
-              <View style={styles.infoText}>
-                <ThemedText
-                  style={[
-                    styles.infoLabel,
-                    {
-                      color: isDark ? "#9CA3AF" : "#6B7280",
-                    },
-                  ]}
-                >
-                  Guests
-                </ThemedText>
-                <ThemedText style={styles.infoValue}>
-                  {bookingData.dates.guests}
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Amount Paid Section */}
-        <View
-          style={[
-            styles.amountSection,
-            {
-              backgroundColor: isDark ? "#134E4A" : "#0D9488",
-            },
-          ]}
-        >
-          <ThemedText style={styles.amountLabel}>TOTAL AMOUNT PAID</ThemedText>
-          <ThemedText style={styles.amountValue}>
-            {bookingData.price.currency}{" "}
-            {bookingData.price.amount.toLocaleString()}
-          </ThemedText>
-          <View style={styles.securityInfo}>
-            <MaterialCommunityIcons
-              name="shield-check"
-              size={16}
-              color="#fff"
-            />
-            <ThemedText style={styles.securityText}>
-              {bookingData.price.payment}
-            </ThemedText>
-          </View>
-        </View>
-
-        {/* Host Section */}
-        <View
-          style={[
-            styles.hostSection,
-            {
-              backgroundColor: isDark ? "#1F2937" : "#F3F4F6",
-              borderColor: isDark ? "#374151" : "#E5E7EB",
-            },
-          ]}
-        >
-          <ThemedText style={styles.hostSectionTitle}>Booking Host</ThemedText>
-
-          <View style={styles.hostInfo}>
-            <Image source={bookingData.host.avatar} style={styles.hostAvatar} />
-            <View style={styles.hostDetails}>
-              <View style={styles.hostNameRow}>
-                <ThemedText style={styles.hostName}>
-                  {bookingData.host.name}
-                </ThemedText>
-                {bookingData.host.verified && (
-                  <View style={styles.verifiedBadge}>
-                    <MaterialCommunityIcons
-                      name="check-circle"
-                      size={14}
-                      color="#4CAF50"
-                    />
-                    <ThemedText style={styles.verifiedText}>
-                      Verified
-                    </ThemedText>
-                  </View>
-                )}
-              </View>
-              <View style={styles.ratingRow}>
-                <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
-                <ThemedText style={styles.ratingText}>
-                  {bookingData.host.rating} ({bookingData.host.reviews} reviews)
-                </ThemedText>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.messageButton,
-              {
-                borderColor: isDark ? "#14B8A6" : "#0D9488",
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="message-outline"
-              size={18}
-              color={isDark ? "#4DB8C4" : "#007B8A"}
-            />
-            <ThemedText
-              style={[
-                styles.messageButtonText,
-                {
-                  color: isDark ? "#4DB8C4" : "#007B8A",
-                },
-              ]}
-            >
-              Message Host
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.primaryButton,
-              {
-                backgroundColor: isDark ? "#0D9488" : "#0D9488",
-              },
-            ]}
-          >
-            <ThemedText style={styles.primaryButtonText}>
-              View Booking Details
-            </ThemedText>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.secondaryButton,
-              {
-                borderColor: isDark ? "#374151" : "#D1D5DB",
-              },
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="download"
-              size={18}
-              color={isDark ? "#fff" : "#333"}
-            />
-            <ThemedText style={styles.secondaryButtonText}>
-              Download Receipt
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
+        ) : bookingId && booking ? (
+          renderConfirmation()
+        ) : (
+          renderBookingList()
+        )}
       </ScrollView>
     </ThemedView>
   );
@@ -335,10 +306,19 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 4,
+    width: 32,
+    alignItems: "center",
   },
   scrollContent: {
     paddingHorizontal: 16,
     paddingVertical: 24,
+    paddingBottom: 40,
+  },
+  centerContainer: {
+    minHeight: 320,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 14,
   },
   iconContainer: {
     alignItems: "center",
@@ -353,7 +333,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   successMessage: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: "700",
     textAlign: "center",
     marginBottom: 8,
@@ -362,12 +342,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginBottom: 24,
-    lineHeight: 20,
+    lineHeight: 22,
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 16,
   },
   propertyCard: {
     borderRadius: 12,
     overflow: "hidden",
-    marginBottom: 24,
+    marginBottom: 20,
     borderWidth: 1,
   },
   propertyImageContainer: {
@@ -396,58 +381,77 @@ const styles = StyleSheet.create({
   propertyInfo: {
     padding: 12,
   },
+  bookingTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10,
+  },
   propertyName: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#9CA3AF",
-    marginBottom: 12,
-    letterSpacing: 0.5,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  infoItem: {
-    flexDirection: "row",
-    alignItems: "center",
     flex: 1,
   },
-  infoText: {
-    marginLeft: 12,
-    flex: 1,
+  statusPill: {
+    backgroundColor: "#DCFCE7",
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  infoLabel: {
+  statusPillText: {
+    color: "#15803D",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  metaText: {
     fontSize: 12,
-    marginBottom: 2,
+    color: "#777",
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  inlineMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 8,
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "600",
+    flex: 1,
+  },
+  cardFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 14,
+  },
+  hostText: {
+    fontSize: 12,
+    color: "#777",
+    flex: 1,
+  },
+  cardAmount: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#0D9488",
   },
   amountSection: {
     padding: 16,
     borderRadius: 12,
-    marginBottom: 24,
+    marginBottom: 20,
     alignItems: "center",
   },
   amountLabel: {
     fontSize: 12,
     fontWeight: "700",
     color: "rgba(255,255,255,0.8)",
-    letterSpacing: 0.5,
     marginBottom: 8,
   },
   amountValue: {
-    fontSize: 36,
+    fontSize: 34,
     fontWeight: "700",
     color: "#fff",
     marginBottom: 8,
@@ -462,103 +466,52 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.9)",
     marginLeft: 6,
   },
-  hostSection: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
-  },
-  hostSectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 16,
-  },
-  hostInfo: {
-    flexDirection: "row",
-    marginBottom: 16,
-  },
-  hostAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  hostDetails: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  hostNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  hostName: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginRight: 8,
-  },
-  verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#E8F5E9",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  verifiedText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#4CAF50",
-    marginLeft: 2,
-  },
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  ratingText: {
-    fontSize: 12,
-    color: "#666",
-    marginLeft: 4,
-  },
-  messageButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 8,
-    borderWidth: 2,
-  },
-  messageButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginLeft: 6,
-  },
-  buttonsContainer: {
-    gap: 12,
-    marginBottom: 24,
-  },
   primaryButton: {
     paddingVertical: 14,
+    paddingHorizontal: 20,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#0D9488",
   },
   primaryButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
   },
-  secondaryButton: {
-    flexDirection: "row",
-    paddingVertical: 14,
+  detailsButton: {
+    marginTop: 14,
+    paddingVertical: 11,
     borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: "#0D9488",
+  },
+  detailsButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  emptyState: {
+    minHeight: 320,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
+    paddingHorizontal: 20,
   },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 6,
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginTop: 14,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  errorText: {
+    fontSize: 14,
+    color: "#DC2626",
+    textAlign: "center",
   },
 });
