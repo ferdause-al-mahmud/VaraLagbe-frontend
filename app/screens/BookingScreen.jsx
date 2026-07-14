@@ -12,9 +12,8 @@ import {
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
-import { getAuthSession } from "../utils/authSession";
-
-const API_BASE_URL = "http://localhost:5000";
+import { getAuthSession, getAuthUserId } from "../utils/authSession";
+import { API_BASE_URL } from "../config/api";
 const fallbackImage = require("../../assets/images/dhanmodi.jpg");
 
 function formatDateRange(checkInDate, checkOutDate) {
@@ -51,8 +50,9 @@ export default function BookingScreen() {
 
   const loadBookings = useCallback(async () => {
     const session = getAuthSession();
+    const authUserId = getAuthUserId();
 
-    if (!bookingId && !session?.user) {
+    if (!bookingId && !authUserId) {
       router.replace("/login");
       return;
     }
@@ -63,9 +63,15 @@ export default function BookingScreen() {
     try {
       const url = bookingId
         ? `${API_BASE_URL}/api/bookings/${bookingId}`
-        : `${API_BASE_URL}/api/bookings/user/${session.user._id || session.user.id}`;
+        : session.user?.role === "owner"
+          ? `${API_BASE_URL}/api/bookings/host/${authUserId}`
+          : `${API_BASE_URL}/api/bookings/user/${authUserId}`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: session?.token
+          ? { Authorization: `Bearer ${session.token}` }
+          : {},
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -85,6 +91,37 @@ export default function BookingScreen() {
       setLoading(false);
     }
   }, [bookingId, router]);
+
+  const handleCancelBooking = async (item) => {
+    const session = getAuthSession();
+    if (!session?.token) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_BASE_URL}/api/bookings/${item._id}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.token}`,
+          },
+          body: JSON.stringify({ reason: "Cancelled from app" }),
+        },
+      );
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Failed to cancel booking.");
+      await loadBookings();
+    } catch (err) {
+      setError(err.message || "Failed to cancel booking.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadBookings();
@@ -140,21 +177,36 @@ export default function BookingScreen() {
             size={17}
             color={isDark ? "#4DB8C4" : "#007B8A"}
           />
-          <ThemedText style={styles.infoValue}>{formatGuests(item.guests)}</ThemedText>
+          <ThemedText style={styles.infoValue}>
+            {formatGuests(item.guests)}
+          </ThemedText>
         </View>
         <View style={styles.cardFooterRow}>
           <ThemedText style={styles.hostText}>Host: {item.hostName}</ThemedText>
           <ThemedText style={styles.cardAmount}>
-            {item.price?.currency || "BDT"} {item.price?.totalAmount?.toLocaleString() || 0}
+            {item.price?.currency || "BDT"}{" "}
+            {item.price?.totalAmount?.toLocaleString() || 0}
           </ThemedText>
         </View>
         {compact && (
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => router.push(`/tabs/booking?bookingId=${item._id}`)}
-          >
-            <ThemedText style={styles.detailsButtonText}>View Details</ThemedText>
-          </TouchableOpacity>
+          <View style={styles.bookingActions}>
+            <TouchableOpacity
+              style={[styles.detailsButton, styles.actionHalf]}
+              onPress={() => router.push(`/tabs/booking?bookingId=${item._id}`)}
+            >
+              <ThemedText style={styles.detailsButtonText}>
+                View Details
+              </ThemedText>
+            </TouchableOpacity>
+            {item.bookingStatus !== "cancelled" && (
+              <TouchableOpacity
+                style={[styles.cancelButton, styles.actionHalf]}
+                onPress={() => handleCancelBooking(item)}
+              >
+                <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
     </View>
@@ -192,7 +244,8 @@ export default function BookingScreen() {
       >
         <ThemedText style={styles.amountLabel}>TOTAL AMOUNT PAID</ThemedText>
         <ThemedText style={styles.amountValue}>
-          {booking.price?.currency || "BDT"} {booking.price?.totalAmount?.toLocaleString() || 0}
+          {booking.price?.currency || "BDT"}{" "}
+          {booking.price?.totalAmount?.toLocaleString() || 0}
         </ThemedText>
         <View style={styles.securityInfo}>
           <MaterialCommunityIcons name="shield-check" size={16} color="#fff" />
@@ -213,7 +266,11 @@ export default function BookingScreen() {
 
   const renderBookingList = () => (
     <>
-      <ThemedText style={styles.pageTitle}>My Bookings</ThemedText>
+      <ThemedText style={styles.pageTitle}>
+        {getAuthSession().user?.role === "owner"
+          ? "Guest Bookings"
+          : "My Bookings"}
+      </ThemedText>
       {bookings.length > 0 ? (
         bookings.map((item) => (
           <BookingCard key={item._id} item={item} compact />
@@ -244,7 +301,10 @@ export default function BookingScreen() {
           },
         ]}
       >
-        <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => router.back()}
+        >
           <MaterialCommunityIcons
             name={bookingId ? "close" : "arrow-left"}
             size={24}
@@ -269,12 +329,18 @@ export default function BookingScreen() {
       >
         {loading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={isDark ? "#4DB8C4" : "#007B8A"} />
+            <ActivityIndicator
+              size="large"
+              color={isDark ? "#4DB8C4" : "#007B8A"}
+            />
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
             <ThemedText style={styles.errorText}>{error}</ThemedText>
-            <TouchableOpacity style={styles.primaryButton} onPress={loadBookings}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={loadBookings}
+            >
               <ThemedText style={styles.primaryButtonText}>Retry</ThemedText>
             </TouchableOpacity>
           </View>
@@ -479,6 +545,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  bookingActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  actionHalf: {
+    flex: 1,
+    marginTop: 0,
+  },
   detailsButton: {
     marginTop: 14,
     paddingVertical: 11,
@@ -488,6 +563,17 @@ const styles = StyleSheet.create({
   },
   detailsButtonText: {
     color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  cancelButton: {
+    paddingVertical: 11,
+    borderRadius: 8,
+    alignItems: "center",
+    backgroundColor: "#FEE2E2",
+  },
+  cancelButtonText: {
+    color: "#B91C1C",
     fontSize: 14,
     fontWeight: "700",
   },

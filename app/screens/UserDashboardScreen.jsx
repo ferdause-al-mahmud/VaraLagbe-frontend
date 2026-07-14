@@ -1,12 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import { getAuthSession } from "../utils/authSession";
@@ -303,7 +303,11 @@ export default function UserDashboardScreen() {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.inboxButton} activeOpacity={0.86}>
+          <TouchableOpacity
+            style={styles.inboxButton}
+            activeOpacity={0.86}
+            onPress={() => router.push("/inbox")}
+          >
             <Text style={styles.inboxText}>Go to Inbox</Text>
           </TouchableOpacity>
         </View>
@@ -327,6 +331,13 @@ export default function UserDashboardScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
+          onPress={() => router.push("/inbox")}
+        >
+          <MaterialCommunityIcons name="message" size={22} color="#516884" />
+          <Text style={styles.navText}>Inbox</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.navItem}
           onPress={() => router.push("/tabs/profile")}
         >
           <MaterialCommunityIcons name="account" size={22} color="#516884" />
@@ -345,7 +356,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 24,
     paddingTop: 14,
-    paddingBottom: 112,
+    paddingBottom: 140,
   },
   topBar: {
     height: 44,
@@ -747,14 +758,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: 81,
+    height: 85,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     backgroundColor: "#FFFFFF",
-    paddingHorizontal: 22,
+    paddingHorizontal: 12,
     paddingTop: 8,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
     shadowColor: "#0D2730",
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -762,23 +773,25 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   navItem: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    flex: 1,
+    height: 70,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    marginHorizontal: 4,
   },
   navActive: {
-    backgroundColor: "#DDECEF",
+    backgroundColor: "#E0F2F1",
   },
   navText: {
-    marginTop: 2,
-    fontSize: 10,
+    marginTop: 4,
+    fontSize: 9,
     color: "#516884",
+    fontWeight: "600",
   },
   navTextActive: {
-    marginTop: 2,
-    fontSize: 10,
+    marginTop: 4,
+    fontSize: 9,
     color: "#064F60",
     fontWeight: "700",
   },

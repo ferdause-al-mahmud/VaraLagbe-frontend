@@ -2,25 +2,23 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import { Colors } from "../constants/colors";
-import { useColorScheme } from "../hooks/useColorScheme";
 import {
-    clearAuthSession,
-    getAuthSession,
-    setAuthSession,
+  clearAuthSession,
+  getAuthSession,
+  getRoleHomePath,
+  setAuthSession,
 } from "../utils/authSession";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 function showMessage(title, message) {
   if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -43,8 +41,6 @@ function getInitials(name) {
 }
 
 export default function ProfileScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? "light"];
   const router = useRouter();
 
   const [profile, setProfile] = useState(null);
@@ -85,6 +81,11 @@ export default function ProfileScreen() {
       return;
     }
 
+    if (session.user?.role === "admin") {
+      router.replace("/admin-profile");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -104,6 +105,12 @@ export default function ProfileScreen() {
       if (user?.role === "owner") {
         setAuthSession({ token: session.token, user });
         router.replace("/owner-profile");
+        return;
+      }
+
+      if (user?.role === "admin") {
+        setAuthSession({ token: session.token, user });
+        router.replace("/admin-profile");
         return;
       }
 
@@ -130,7 +137,7 @@ export default function ProfileScreen() {
     : 0;
   const bookingsCount = 0;
   const savedSearchesCount = 0;
-  const isOwner = profile?.role === "owner";
+  const dashboardPath = getRoleHomePath(profile?.role);
   const locationText =
     profile?.address?.cityDistrict?.trim() ||
     profile?.address?.thanaUpazila?.trim() ||
@@ -359,7 +366,11 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.settingRow}
             onPress={() =>
-              router.push(isOwner ? "/dashboard" : "/user-dashboard")
+              router.push(
+                dashboardPath === "/tabs/home"
+                  ? "/user-dashboard"
+                  : dashboardPath,
+              )
             }
           >
             <View style={styles.settingLeft}>

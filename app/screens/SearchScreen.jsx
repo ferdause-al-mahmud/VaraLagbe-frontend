@@ -16,8 +16,7 @@ import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 import FilterModal from "../components/FilterModal";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 export default function SearchScreen() {
   const router = useRouter();

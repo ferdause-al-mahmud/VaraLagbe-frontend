@@ -20,7 +20,7 @@ export default function SplashScreen() {
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [progressAnim, router]);
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 1],
@@ -171,3 +171,4 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
 });
+

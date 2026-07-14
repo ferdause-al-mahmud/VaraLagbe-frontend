@@ -20,8 +20,7 @@ import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 import { getAuthSession } from "../utils/authSession";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 const { width } = Dimensions.get("window");
 
 function showMessage(title, message) {
@@ -659,6 +658,26 @@ export default function PropertyDetailsScreen() {
                   backgroundColor: isDark ? colors.cardBackground : "#f9f9f9",
                 },
               ]}
+              onPress={() => {
+                const session = getAuthSession();
+                if (!session?.token) {
+                  showMessage(
+                    "Login Required",
+                    "Please log in before messaging the owner.",
+                  );
+                  router.push("/login");
+                  return;
+                }
+
+                router.push({
+                  pathname: "/inbox",
+                  params: {
+                    participantId: property.owner_id,
+                    propertyId: property._id,
+                    propertyTitle: property.title,
+                  },
+                });
+              }}
             >
               <MaterialCommunityIcons
                 name="message"

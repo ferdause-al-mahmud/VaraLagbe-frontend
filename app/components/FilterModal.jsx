@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -7,28 +7,35 @@ import {
   TouchableOpacity,
   Text,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
+import { API_BASE_URL } from "../config/api";
 
-const PROPERTY_TYPES = ["Entire Flat", "Private Room", "Shared Seat", "Sublet"];
+// Default amenities with icons (fallback if API fails)
+const AMENITIES_MAP = {
+  "High-speed Wi-Fi": "wifi",
+  "24/7 Security": "shield-check",
+  "Generator Backup": "flash",
+  AC: "snowflake",
+  "Meal Facility": "silverware-fork-knife",
+  Parking: "parking",
+  Gym: "dumbbell",
+  "Swimming Pool": "water",
+  Garden: "leaf",
+  Balcony: "table-furniture",
+};
 
-const AMENITIES = [
-  { name: "High-speed Wi-Fi", icon: "wifi" },
-  { name: "24/7 Security", icon: "shield-check" },
-  { name: "Generator Backup", icon: "flash" },
-  { name: "AC", icon: "snowflake" },
-  { name: "Meal Facility", icon: "silverware-fork-knife" },
-];
-
-const LOCATIONS = [
-  { name: "Dhanmondi", image: require("../../assets/images/dhanmodi.jpg") },
-  { name: "Banani", image: require("../../assets/images/banani.jpeg") },
-  { name: "Gulshan", image: require("../../assets/images/gulshan.jpg") },
-  { name: "Uttara", image: require("../../assets/images/uttara.jpg") },
-];
+// Default locations with images (fallback if API fails)
+const LOCATIONS_MAP = {
+  Dhanmondi: require("../../assets/images/dhanmodi.jpg"),
+  Banani: require("../../assets/images/banani.jpeg"),
+  Gulshan: require("../../assets/images/gulshan.jpg"),
+  Uttara: require("../../assets/images/uttara.jpg"),
+};
 
 export default function FilterModal({
   visible,
@@ -54,10 +61,49 @@ export default function FilterModal({
     initialFilters.location || [],
   );
 
+  // Dynamic data from backend
+  const [filterOptions, setFilterOptions] = useState({
+    propertyTypes: ["Entire Flat", "Private Room", "Shared Seat", "Sublet"],
+    amenities: Object.keys(AMENITIES_MAP),
+    locations: Object.keys(LOCATIONS_MAP),
+    priceRange: { min: 1000, max: 100000 },
+  });
+  const [loadingOptions, setLoadingOptions] = useState(true);
+
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      setLoadingOptions(true);
+      const response = await fetch(`${API_BASE_URL}/api/properties/options`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFilterOptions((currentOptions) => ({
+            propertyTypes:
+              data.data.propertyTypes || currentOptions.propertyTypes,
+            amenities: data.data.amenities || currentOptions.amenities,
+            locations: data.data.locations || currentOptions.locations,
+            priceRange: data.data.priceRange || currentOptions.priceRange,
+          }));
+          setPriceRange([
+            initialFilters.minPrice || data.data.priceRange.min || 1000,
+            initialFilters.maxPrice || data.data.priceRange.max || 100000,
+          ]);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching filter options:", err);
+    } finally {
+      setLoadingOptions(false);
+    }
+  }, [initialFilters.maxPrice, initialFilters.minPrice]);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
   const handlePriceChange = (value, index) => {
     const newRange = [...priceRange];
     newRange[index] = value;
-    // Ensure min doesn't exceed max and max doesn't go below min
     if (index === 0 && value <= newRange[1]) {
       setPriceRange(newRange);
     } else if (index === 1 && value >= newRange[0]) {
@@ -88,10 +134,21 @@ export default function FilterModal({
   };
 
   const handleResetAll = () => {
-    setPriceRange([1000, 100000]);
+    const defaultMin = filterOptions.priceRange.min || 1000;
+    const defaultMax = filterOptions.priceRange.max || 100000;
+
+    setPriceRange([defaultMin, defaultMax]);
     setSelectedTypes([]);
     setSelectedAmenities([]);
     setSelectedLocations([]);
+
+    // Apply default filters to fetch all properties and close modal
+    const defaultFilters = {
+      minPrice: defaultMin,
+      maxPrice: defaultMax,
+    };
+    onApplyFilters(defaultFilters);
+    onClose();
   };
 
   const handleApplyFilters = () => {
@@ -104,6 +161,16 @@ export default function FilterModal({
     };
     onApplyFilters(filters);
     onClose();
+  };
+
+  const getAmenityIcon = (amenity) => {
+    return AMENITIES_MAP[amenity] || "check-circle";
+  };
+
+  const getLocationImage = (location) => {
+    return (
+      LOCATIONS_MAP[location] || require("../../assets/images/dhanmodi.jpg")
+    );
   };
 
   return (
@@ -143,230 +210,263 @@ export default function FilterModal({
           </TouchableOpacity>
         </View>
 
-        {/* Scrollable Content */}
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Price Range Section */}
-          <View
-            style={[
-              styles.section,
-              { backgroundColor: isDark ? colors.cardBackground : "#fff" },
-            ]}
-          >
-            <Text
-              style={[styles.sectionTitle, { color: isDark ? "#fff" : "#333" }]}
-            >
-              Price Range
+        {/* Loading State */}
+        {loadingOptions ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.tint} />
+            <Text style={{ color: colors.text, marginTop: 12 }}>
+              Loading filters...
             </Text>
-            <Text style={styles.priceText}>
-              ৳{priceRange[0].toLocaleString()} - ৳
-              {priceRange[1].toLocaleString()}+
-            </Text>
-
-            {/* Min Price Slider */}
-            <View style={styles.sliderContainer}>
-              <Text style={styles.priceLabel}>Minimum</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={1000}
-                maximumValue={100000}
-                step={1000}
-                value={priceRange[0]}
-                onValueChange={(value) => handlePriceChange(value, 0)}
-                minimumTrackTintColor="#007AFF"
-                maximumTrackTintColor="#e0e0e0"
-              />
-              <Text style={styles.priceValue}>
-                ৳{priceRange[0].toLocaleString()}
-              </Text>
-            </View>
-
-            {/* Max Price Slider */}
-            <View style={styles.sliderContainer}>
-              <Text style={styles.priceLabel}>Maximum</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={1000}
-                maximumValue={100000}
-                step={1000}
-                value={priceRange[1]}
-                onValueChange={(value) => handlePriceChange(value, 1)}
-                minimumTrackTintColor="#007AFF"
-                maximumTrackTintColor="#e0e0e0"
-              />
-              <Text style={styles.priceValue}>
-                ৳{priceRange[1].toLocaleString()}
-              </Text>
-            </View>
           </View>
-
-          {/* Property Type Section */}
-          <View
-            style={[
-              styles.section,
-              { backgroundColor: isDark ? colors.cardBackground : "#fff" },
-            ]}
+        ) : (
+          /* Scrollable Content */
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
           >
-            <Text
-              style={[styles.sectionTitle, { color: isDark ? "#fff" : "#333" }]}
-            >
-              Property Type
-            </Text>
-            <View style={styles.typeButtonsContainer}>
-              {PROPERTY_TYPES.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.typeButton,
-                    selectedTypes.includes(type)
-                      ? styles.typeButtonActive
-                      : {
-                          backgroundColor: isDark ? "#333" : "#e8e8e8",
-                        },
-                  ]}
-                  onPress={() => togglePropertyType(type)}
-                >
-                  <Text
-                    style={[
-                      styles.typeButtonText,
-                      selectedTypes.includes(type)
-                        ? styles.typeButtonTextActive
-                        : { color: isDark ? "#fff" : "#666" },
-                    ]}
-                  >
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Amenities Section */}
-          <View
-            style={[
-              styles.section,
-              { backgroundColor: isDark ? colors.cardBackground : "#fff" },
-            ]}
-          >
-            <Text
-              style={[styles.sectionTitle, { color: isDark ? "#fff" : "#333" }]}
-            >
-              Amenities
-            </Text>
-            {AMENITIES.map((amenity) => (
-              <TouchableOpacity
-                key={amenity.name}
-                style={styles.amenityRow}
-                onPress={() => toggleAmenity(amenity.name)}
-              >
-                <View style={styles.amenityLeft}>
-                  <MaterialCommunityIcons
-                    name={amenity.icon}
-                    size={20}
-                    color={isDark ? "#fff" : "#666"}
-                  />
-                  <Text
-                    style={[
-                      styles.amenityText,
-                      { color: isDark ? "#fff" : "#333" },
-                    ]}
-                  >
-                    {amenity.name}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.checkbox,
-                    selectedAmenities.includes(amenity.name)
-                      ? styles.checkboxActive
-                      : { borderColor: isDark ? "#555" : "#ddd" },
-                  ]}
-                >
-                  {selectedAmenities.includes(amenity.name) && (
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={16}
-                      color="#fff"
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Location Section */}
-          <View
-            style={[
-              styles.section,
-              { backgroundColor: isDark ? colors.cardBackground : "#fff" },
-            ]}
-          >
-            <Text
-              style={[styles.sectionTitle, { color: isDark ? "#fff" : "#333" }]}
-            >
-              Location
-            </Text>
-            <View style={styles.locationGrid}>
-              {LOCATIONS.map((location) => (
-                <TouchableOpacity
-                  key={location.name}
-                  style={[
-                    styles.locationCard,
-                    selectedLocations.includes(location.name)
-                      ? styles.locationCardActive
-                      : {},
-                  ]}
-                  onPress={() => toggleLocation(location.name)}
-                >
-                  <Image source={location.image} style={styles.locationImage} />
-                  {selectedLocations.includes(location.name) && (
-                    <View style={styles.locationCheckIcon}>
-                      <MaterialCommunityIcons
-                        name="check-circle"
-                        size={28}
-                        color="#fff"
-                      />
-                    </View>
-                  )}
-                  <Text style={styles.locationName}>{location.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </ScrollView>
-
-        {/* Footer Buttons */}
-        <View
-          style={[
-            styles.footer,
-            { backgroundColor: isDark ? colors.cardBackground : "#fff" },
-          ]}
-        >
-          <TouchableOpacity
-            style={[
-              styles.resetButton,
-              { backgroundColor: isDark ? "#333" : "#e8e8e8" },
-            ]}
-            onPress={handleResetAll}
-          >
-            <Text
+            {/* Price Range Section */}
+            <View
               style={[
-                styles.resetButtonText,
-                { color: isDark ? "#fff" : "#333" },
+                styles.section,
+                { backgroundColor: isDark ? colors.cardBackground : "#fff" },
               ]}
             >
-              Reset All
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.applyButton}
-            onPress={handleApplyFilters}
+              <Text
+                style={[
+                  styles.sectionTitle,
+                  { color: isDark ? "#fff" : "#333" },
+                ]}
+              >
+                Price Range
+              </Text>
+              <Text style={styles.priceText}>
+                ৳{priceRange[0].toLocaleString()} - ৳
+                {priceRange[1].toLocaleString()}+
+              </Text>
+
+              {/* Min Price Slider */}
+              <View style={styles.sliderContainer}>
+                <Text style={styles.priceLabel}>Minimum</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={filterOptions.priceRange.min || 1000}
+                  maximumValue={filterOptions.priceRange.max || 100000}
+                  step={1000}
+                  value={priceRange[0]}
+                  onValueChange={(value) => handlePriceChange(value, 0)}
+                  minimumTrackTintColor="#007AFF"
+                  maximumTrackTintColor="#e0e0e0"
+                />
+                <Text style={styles.priceValue}>
+                  ৳{priceRange[0].toLocaleString()}
+                </Text>
+              </View>
+
+              {/* Max Price Slider */}
+              <View style={styles.sliderContainer}>
+                <Text style={styles.priceLabel}>Maximum</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={filterOptions.priceRange.min || 1000}
+                  maximumValue={filterOptions.priceRange.max || 100000}
+                  step={1000}
+                  value={priceRange[1]}
+                  onValueChange={(value) => handlePriceChange(value, 1)}
+                  minimumTrackTintColor="#007AFF"
+                  maximumTrackTintColor="#e0e0e0"
+                />
+                <Text style={styles.priceValue}>
+                  ৳{priceRange[1].toLocaleString()}
+                </Text>
+              </View>
+            </View>
+
+            {/* Property Type Section */}
+            {filterOptions.propertyTypes.length > 0 && (
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: isDark ? colors.cardBackground : "#fff" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: isDark ? "#fff" : "#333" },
+                  ]}
+                >
+                  Property Type
+                </Text>
+                <View style={styles.typeButtonsContainer}>
+                  {filterOptions.propertyTypes.map((type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.typeButton,
+                        selectedTypes.includes(type)
+                          ? styles.typeButtonActive
+                          : {
+                              backgroundColor: isDark ? "#333" : "#e8e8e8",
+                            },
+                      ]}
+                      onPress={() => togglePropertyType(type)}
+                    >
+                      <Text
+                        style={[
+                          styles.typeButtonText,
+                          selectedTypes.includes(type)
+                            ? styles.typeButtonTextActive
+                            : { color: isDark ? "#fff" : "#666" },
+                        ]}
+                      >
+                        {type}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Amenities Section */}
+            {filterOptions.amenities.length > 0 && (
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: isDark ? colors.cardBackground : "#fff" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: isDark ? "#fff" : "#333" },
+                  ]}
+                >
+                  Amenities
+                </Text>
+                {filterOptions.amenities.map((amenity) => (
+                  <TouchableOpacity
+                    key={amenity}
+                    style={styles.amenityRow}
+                    onPress={() => toggleAmenity(amenity)}
+                  >
+                    <View style={styles.amenityLeft}>
+                      <MaterialCommunityIcons
+                        name={getAmenityIcon(amenity)}
+                        size={20}
+                        color={isDark ? "#fff" : "#666"}
+                      />
+                      <Text
+                        style={[
+                          styles.amenityText,
+                          { color: isDark ? "#fff" : "#333" },
+                        ]}
+                      >
+                        {amenity}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        selectedAmenities.includes(amenity)
+                          ? styles.checkboxActive
+                          : { borderColor: isDark ? "#555" : "#ddd" },
+                      ]}
+                    >
+                      {selectedAmenities.includes(amenity) && (
+                        <MaterialCommunityIcons
+                          name="check"
+                          size={16}
+                          color="#fff"
+                        />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Location Section */}
+            {filterOptions.locations.length > 0 && (
+              <View
+                style={[
+                  styles.section,
+                  { backgroundColor: isDark ? colors.cardBackground : "#fff" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    { color: isDark ? "#fff" : "#333" },
+                  ]}
+                >
+                  Location
+                </Text>
+                <View style={styles.locationGrid}>
+                  {filterOptions.locations.map((location) => (
+                    <TouchableOpacity
+                      key={location}
+                      style={[
+                        styles.locationCard,
+                        selectedLocations.includes(location)
+                          ? styles.locationCardActive
+                          : {},
+                      ]}
+                      onPress={() => toggleLocation(location)}
+                    >
+                      <Image
+                        source={getLocationImage(location)}
+                        style={styles.locationImage}
+                      />
+                      {selectedLocations.includes(location) && (
+                        <View style={styles.locationCheckIcon}>
+                          <MaterialCommunityIcons
+                            name="check-circle"
+                            size={28}
+                            color="#fff"
+                          />
+                        </View>
+                      )}
+                      <Text style={styles.locationName}>{location}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+          </ScrollView>
+        )}
+
+        {/* Footer Buttons */}
+        {!loadingOptions && (
+          <View
+            style={[
+              styles.footer,
+              { backgroundColor: isDark ? colors.cardBackground : "#fff" },
+            ]}
           >
-            <Text style={styles.applyButtonText}>Apply Filters</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.resetButton,
+                { backgroundColor: isDark ? "#333" : "#e8e8e8" },
+              ]}
+              onPress={handleResetAll}
+            >
+              <Text
+                style={[
+                  styles.resetButtonText,
+                  { color: isDark ? "#fff" : "#333" },
+                ]}
+              >
+                Reset All
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={handleApplyFilters}
+            >
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </Modal>
   );
@@ -393,6 +493,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingVertical: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 60,
   },
   section: {
     marginHorizontal: 12,

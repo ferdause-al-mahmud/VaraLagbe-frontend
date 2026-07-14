@@ -16,15 +16,7 @@ import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
 import FilterModal from "../components/FilterModal";
-
-const API_BASE_URL = "http://localhost:5000";
-
-const filters = [
-  { id: "1", name: "Flats", icon: "home" },
-  { id: "2", name: "Houses", icon: "home-outline" },
-  { id: "3", name: "Villas", icon: "castle" },
-  { id: "4", name: "Shops", icon: "shopping" },
-];
+import { API_BASE_URL } from "../config/api";
 
 export default function HomeScreen() {
   const router = useRouter();

@@ -91,6 +91,22 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="inbox"
+        options={{
+          title: "Inbox",
+          headerTitle: "Inbox",
+          tabBarLabel: "Inbox",
+          tabBarIcon: ({ color, focused }) => (
+            <MaterialCommunityIcons
+              name={focused ? "message" : "message-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
