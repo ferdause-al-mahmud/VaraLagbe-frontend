@@ -2,13 +2,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import useColorScheme from "../hooks/useColorScheme";
@@ -296,9 +296,12 @@ export default function OwnerDashboardScreen() {
           />
           <Text style={styles.navText}>ADD NEW</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/inbox")}
+        >
           <MaterialCommunityIcons name="message" size={20} color="#233138" />
-          <Text style={styles.navText}>MESSAGES</Text>
+          <Text style={styles.navText}>INBOX</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}

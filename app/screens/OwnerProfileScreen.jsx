@@ -2,18 +2,18 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
 import useColorScheme from "../hooks/useColorScheme";
 import {
-    clearAuthSession,
-    getAuthSession,
-    setAuthSession,
+  clearAuthSession,
+  getAuthSession,
+  setAuthSession,
 } from "../utils/authSession";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -354,9 +354,12 @@ export default function OwnerProfileScreen() {
           />
           <Text style={styles.navText}>ADD NEW</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => router.push("/inbox")}
+        >
           <MaterialCommunityIcons name="message" size={20} color="#233138" />
-          <Text style={styles.navText}>MESSAGES</Text>
+          <Text style={styles.navText}>INBOX</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
           <MaterialCommunityIcons name="account" size={20} color="#233138" />

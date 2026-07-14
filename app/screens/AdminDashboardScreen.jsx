@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import AdminBottomTabs from "../components/adminDashboard/AdminBottomTabs";
 import AdminHeader from "../components/adminDashboard/AdminHeader";
+import AdminInbox from "../components/adminDashboard/AdminInbox";
 import AdminSidebar from "../components/adminDashboard/AdminSidebar";
 import ContentModeration from "../components/adminDashboard/ContentModeration";
 import DashboardOverview from "../components/adminDashboard/DashboardOverview";
@@ -24,6 +25,7 @@ export default function AdminDashboardScreen() {
   const title = useMemo(() => {
     if (activeTab === "users") return "User Management";
     if (activeTab === "content") return "Content Moderation";
+    if (activeTab === "inbox") return "Inbox Messages";
     return "Overview Dashboard";
   }, [activeTab]);
 
@@ -43,6 +45,7 @@ export default function AdminDashboardScreen() {
           {activeTab === "dashboard" && <DashboardOverview title={title} />}
           {activeTab === "content" && <ContentModeration />}
           {activeTab === "users" && <UserManagement />}
+          {activeTab === "inbox" && <AdminInbox />}
         </ScrollView>
 
         {showFab && (

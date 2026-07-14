@@ -93,6 +93,13 @@ export default function RootLayout() {
             animationEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="inbox"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
       </Stack>
       <Toast />
     </>

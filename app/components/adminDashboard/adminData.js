@@ -2,6 +2,7 @@ export const tabs = [
   { key: "dashboard", label: "Dashboard", icon: "view-dashboard-outline" },
   { key: "users", label: "Users", icon: "account-group-outline" },
   { key: "content", label: "Content", icon: "file-document-outline" },
+  { key: "inbox", label: "Inbox", icon: "message-outline" },
 ];
 
 export const avatars = {
