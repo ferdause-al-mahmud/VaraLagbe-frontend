@@ -3,7 +3,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import { avatars } from "./adminData";
 import { colors, styles } from "./adminTheme";
 
-export default function AdminHeader({ onMenuPress }) {
+export default function AdminHeader({ onMenuPress, onProfilePress }) {
   return (
     <View style={styles.header}>
       <TouchableOpacity
@@ -15,7 +15,11 @@ export default function AdminHeader({ onMenuPress }) {
       </TouchableOpacity>
       <Text style={styles.brand}>Admin Curator</Text>
       <View style={styles.headerSpacer} />
-      <Image source={{ uri: avatars.admin }} style={styles.adminAvatar} />
+      <TouchableOpacity activeOpacity={0.78} onPress={onProfilePress}>
+        <Image source={{ uri: avatars.admin }} style={styles.adminAvatar} />
+      </TouchableOpacity>
     </View>
   );
 }
+
+

@@ -2,20 +2,20 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
 import { getAuthSession, setAuthSession } from "../utils/authSession";
 import { showToast } from "../utils/toast";
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 export default function AddPropertyScreen() {
   const router = useRouter();
@@ -240,7 +240,7 @@ export default function AddPropertyScreen() {
         images: propertyData.images,
       };
 
-      const response = await fetch("http://localhost:5000/api/properties", {
+      const response = await fetch(`${API_BASE_URL}/api/properties`, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),

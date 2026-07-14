@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StyleSheet,
@@ -11,120 +12,311 @@ import {
   View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import { getAuthSession } from "../utils/authSession";
-
+import { getAuthSession, getAuthUserId } from "../utils/authSession";
+import { API_BASE_URL } from "../config/api";
 const INBOX_TABS = ["All", "Unread", "Archive"];
 
-const SAMPLE_MESSAGES = [
-  {
-    id: "1",
-    senderName: "Anisur Rahman",
-    senderRole: "Host",
-    propertyName: "Luxury 3BHK Dhanmondi",
-    lastMessage: "is the parking space included in...",
-    timestamp: "2m ago",
-    avatar: { initials: "AR", color: "#D4A574" },
-    isUnread: true,
-    onlineStatus: true,
-  },
-  {
-    id: "2",
-    senderName: "Farhana K.",
-    senderRole: "Host",
-    propertyName: "Studio Apartment Gulshan 2",
-    lastMessage: "The keys are with the security guard...",
-    timestamp: "1h ago",
-    avatar: { initials: "FK", color: "#E8B4B8" },
-    isUnread: false,
-    onlineStatus: false,
-  },
-  {
-    id: "3",
-    senderName: "Imtiaz Ahmed",
-    senderRole: "Tenant",
-    propertyName: "Modern Duplex in Banani",
-    lastMessage: "Thank you for the visit. I'll let you kn...",
-    timestamp: "Yesterday",
-    avatar: { initials: "IA", color: "#8BD5D0" },
-    isUnread: false,
-    onlineStatus: true,
-  },
-  {
-    id: "4",
-    senderName: "Nabila J.",
-    senderRole: "Tenant",
-    propertyName: "Cozy Room near Bashundhara R/A",
-    lastMessage: "Is the internet connection high speed?",
-    timestamp: "2 days ago",
-    avatar: { initials: "NJ", color: "#F6C77F" },
-    isUnread: false,
-    onlineStatus: false,
-  },
-  {
-    id: "5",
-    senderName: "Zayed Khan",
-    senderRole: "Host",
-    propertyName: "Purbachal Penthouse",
-    lastMessage: "Great, looking forward to seeing you...",
-    timestamp: "Mon",
-    avatar: { initials: "ZK", color: "#94E5F2" },
-    isUnread: false,
-    onlineStatus: false,
-  },
-];
+function initials(name = "VL") {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "VL"
+  );
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  const diff = Date.now() - new Date(value).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
 
 export default function InboxScreen() {
   const router = useRouter();
-  const { user } = getAuthSession();
+  const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState("All");
   const [searchText, setSearchText] = useState("");
+  const [conversations, setConversations] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [startedKey, setStartedKey] = useState(null);
 
-  const filteredMessages = SAMPLE_MESSAGES.filter((msg) => {
-    const matchesSearch =
-      msg.senderName.toLowerCase().includes(searchText.toLowerCase()) ||
-      msg.propertyName.toLowerCase().includes(searchText.toLowerCase());
+  const currentUserId = getAuthUserId();
 
-    if (activeTab === "Unread") return msg.isUnread && matchesSearch;
-    if (activeTab === "Archive") return false; // Archive functionality can be added later
-    return matchesSearch;
-  });
+  const authFetch = useCallback(
+    async (path, options = {}) => {
+      const liveSession = getAuthSession();
+      if (!liveSession?.token) {
+        router.replace("/login");
+        throw new Error("Login required");
+      }
 
-  const renderMessageItem = ({ item }) => (
-    <TouchableOpacity style={styles.messageRow} activeOpacity={0.7}>
-      <View style={styles.avatarContainer}>
-        <View
-          style={[styles.messageAvatar, { backgroundColor: item.avatar.color }]}
-        >
-          <Text style={styles.avatarText}>{item.avatar.initials}</Text>
-        </View>
-        {item.onlineStatus && <View style={styles.onlineDot} />}
-      </View>
-
-      <View style={styles.messageCopy}>
-        <View style={styles.messageTop}>
-          <View style={styles.senderInfo}>
-            <Text style={styles.messageName}>{item.senderName}</Text>
-            <Text style={styles.senderRole}>({item.senderRole})</Text>
-          </View>
-          <Text style={styles.messageTime}>{item.timestamp}</Text>
-        </View>
-        <View style={styles.propertyTag}>
-          <MaterialCommunityIcons
-            name="office-building"
-            size={12}
-            color="#064F60"
-          />
-          <Text style={styles.propertyName}>{item.propertyName}</Text>
-        </View>
-        <View style={styles.messagePreviewRow}>
-          <Text style={styles.messagePreview} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-          {item.isUnread && <View style={styles.unreadDot} />}
-        </View>
-      </View>
-    </TouchableOpacity>
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${liveSession.token}`,
+          ...(options.headers || {}),
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Request failed");
+      return data.data;
+    },
+    [router],
   );
+
+  const loadConversations = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true);
+      try {
+        const data = await authFetch("/api/chats");
+        setConversations(data || []);
+        if (selectedChat?.id) {
+          const updated = data?.find((chat) => chat.id === selectedChat.id);
+          if (updated) setSelectedChat(updated);
+        }
+      } catch (error) {
+        console.error("Load chats error:", error);
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [authFetch, selectedChat?.id],
+  );
+
+  const openChat = useCallback(
+    async (chat) => {
+      setSelectedChat(chat);
+      try {
+        const data = await authFetch(`/api/chats/${chat.id}`);
+        setSelectedChat(data);
+        await authFetch(`/api/chats/${chat.id}/read`, { method: "PATCH" });
+        loadConversations({ silent: true });
+      } catch (error) {
+        console.error("Open chat error:", error);
+      }
+    },
+    [authFetch, loadConversations],
+  );
+
+  useEffect(() => {
+    loadConversations();
+    const intervalId = setInterval(
+      () => loadConversations({ silent: true }),
+      5000,
+    );
+    return () => clearInterval(intervalId);
+  }, [loadConversations]);
+
+  useEffect(() => {
+    const participantId = params.participantId || params.ownerId;
+    const propertyId = params.propertyId || "";
+    const key = participantId ? `${participantId}-${propertyId}` : null;
+
+    if (!participantId || key === startedKey) return;
+
+    setStartedKey(key);
+    authFetch("/api/chats/start", {
+      method: "POST",
+      body: JSON.stringify({
+        participantId,
+        propertyId,
+        propertyTitle: params.propertyTitle || "Property conversation",
+      }),
+    })
+      .then((chat) => {
+        setSelectedChat(chat);
+        loadConversations({ silent: true });
+      })
+      .catch((error) => console.error("Start chat error:", error));
+  }, [
+    authFetch,
+    loadConversations,
+    params.ownerId,
+    params.participantId,
+    params.propertyId,
+    params.propertyTitle,
+    startedKey,
+  ]);
+
+  const filteredMessages = useMemo(
+    () =>
+      conversations.filter((chat) => {
+        const name = chat.participant?.name || "";
+        const propertyName = chat.propertyTitle || "";
+        const matchesSearch =
+          name.toLowerCase().includes(searchText.toLowerCase()) ||
+          propertyName.toLowerCase().includes(searchText.toLowerCase());
+
+        if (activeTab === "Unread")
+          return chat.unreadCount > 0 && matchesSearch;
+        if (activeTab === "Archive") return false;
+        return matchesSearch;
+      }),
+    [activeTab, conversations, searchText],
+  );
+
+  const sendMessage = async () => {
+    if (!selectedChat?.id || !draft.trim()) return;
+    setSending(true);
+    try {
+      const data = await authFetch(`/api/chats/${selectedChat.id}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ text: draft.trim() }),
+      });
+      setSelectedChat(data);
+      setDraft("");
+      loadConversations({ silent: true });
+    } catch (error) {
+      console.error("Send message error:", error);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const renderMessageItem = ({ item }) => {
+    const name = item.participant?.name || "Unknown";
+    const role =
+      item.participant?.role === "owner"
+        ? "Owner"
+        : item.participant?.role === "admin"
+          ? "Admin"
+          : "Tenant";
+    return (
+      <TouchableOpacity
+        style={styles.messageRow}
+        activeOpacity={0.7}
+        onPress={() => openChat(item)}
+      >
+        <View style={styles.avatarContainer}>
+          <View style={styles.messageAvatar}>
+            <Text style={styles.avatarText}>{initials(name)}</Text>
+          </View>
+          {item.unreadCount > 0 && <View style={styles.onlineDot} />}
+        </View>
+
+        <View style={styles.messageCopy}>
+          <View style={styles.messageTop}>
+            <View style={styles.senderInfo}>
+              <Text style={styles.messageName}>{name}</Text>
+              <Text style={styles.senderRole}>({role})</Text>
+            </View>
+            <Text style={styles.messageTime}>
+              {formatTime(item.lastMessageAt)}
+            </Text>
+          </View>
+          <View style={styles.propertyTag}>
+            <MaterialCommunityIcons
+              name="office-building"
+              size={12}
+              color="#064F60"
+            />
+            <Text style={styles.propertyName}>{item.propertyTitle}</Text>
+          </View>
+          <View style={styles.messagePreviewRow}>
+            <Text style={styles.messagePreview} numberOfLines={1}>
+              {item.lastMessage}
+            </Text>
+            {item.unreadCount > 0 && <View style={styles.unreadDot} />}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderConversation = () => {
+    const name = selectedChat.participant?.name || "Conversation";
+    return (
+      <View style={styles.chatPanel}>
+        <View style={styles.chatHeader}>
+          <TouchableOpacity
+            onPress={() => setSelectedChat(null)}
+            style={styles.chatBackButton}
+          >
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={22}
+              color="#0D9488"
+            />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.chatTitle}>{name}</Text>
+            <Text style={styles.chatSubtitle}>
+              {selectedChat.propertyTitle}
+            </Text>
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.chatMessages}
+          contentContainerStyle={styles.chatMessageContent}
+        >
+          {(selectedChat.messages || []).map((message) => {
+            const mine =
+              String(message.senderId?._id || message.senderId) ===
+              String(currentUserId);
+            return (
+              <View
+                key={message._id || message.createdAt}
+                style={[
+                  styles.bubble,
+                  mine ? styles.myBubble : styles.theirBubble,
+                ]}
+              >
+                <Text style={[styles.bubbleText, mine && styles.myBubbleText]}>
+                  {message.text}
+                </Text>
+                <Text style={[styles.bubbleTime, mine && styles.myBubbleTime]}>
+                  {formatTime(message.createdAt)}
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+
+        <View style={styles.composer}>
+          <TextInput
+            style={styles.composerInput}
+            placeholder="Write a message..."
+            placeholderTextColor="#9CA3AF"
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+          />
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={sendMessage}
+            disabled={sending || !draft.trim()}
+          >
+            {sending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <MaterialCommunityIcons name="send" size={20} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  if (selectedChat) {
+    return (
+      <ThemedView style={styles.screen}>{renderConversation()}</ThemedView>
+    );
+  }
 
   return (
     <ThemedView style={styles.screen}>
@@ -136,15 +328,24 @@ export default function InboxScreen() {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#0D9488" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Inbox</Text>
-        <TouchableOpacity style={styles.notificationButton}>
-          <MaterialCommunityIcons
-            name="bell-outline"
-            size={22}
-            color="#0D9488"
-          />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
+        <TouchableOpacity
+          style={styles.notificationButton}
+          onPress={() => loadConversations()}
+        >
+          <MaterialCommunityIcons name="refresh" size={22} color="#0D9488" />
+          {!!conversations.reduce(
+            (sum, chat) => sum + (chat.unreadCount || 0),
+            0,
+          ) && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.badgeText}>
+                {conversations.reduce(
+                  (sum, chat) => sum + (chat.unreadCount || 0),
+                  0,
+                )}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -183,7 +384,11 @@ export default function InboxScreen() {
         ))}
       </View>
 
-      {filteredMessages.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#0D9488" />
+        </View>
+      ) : filteredMessages.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MaterialCommunityIcons
             name="message-outline"
@@ -194,7 +399,7 @@ export default function InboxScreen() {
           <Text style={styles.emptySubtitle}>
             {searchText
               ? "Try a different search"
-              : "Your inbox is empty. Start a conversation!"}
+              : "Message an owner from a property page."}
           </Text>
         </View>
       ) : (
@@ -202,7 +407,6 @@ export default function InboxScreen() {
           data={filteredMessages}
           renderItem={renderMessageItem}
           keyExtractor={(item) => item.id}
-          scrollEnabled={false}
           contentContainerStyle={styles.messagesList}
         />
       )}
@@ -249,12 +453,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 2,
     right: 2,
-    width: 20,
+    minWidth: 20,
     height: 20,
     borderRadius: 10,
     backgroundColor: "#EF4444",
     alignItems: "center",
     justifyContent: "center",
+    paddingHorizontal: 5,
   },
   badgeText: {
     fontSize: 11,
@@ -306,6 +511,7 @@ const styles = StyleSheet.create({
   },
   messagesList: {
     paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   messageRow: {
     flexDirection: "row",
@@ -325,6 +531,7 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#0D9488",
   },
   avatarText: {
     fontSize: 16,
@@ -420,5 +627,104 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     marginTop: 6,
     textAlign: "center",
+  },
+  chatPanel: {
+    flex: 1,
+    backgroundColor: "#F5FAFC",
+  },
+  chatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  chatBackButton: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  chatTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#0F1519",
+  },
+  chatSubtitle: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+  },
+  chatMessages: {
+    flex: 1,
+  },
+  chatMessageContent: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  bubble: {
+    maxWidth: "82%",
+    borderRadius: 14,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  myBubble: {
+    alignSelf: "flex-end",
+    backgroundColor: "#0D9488",
+  },
+  theirBubble: {
+    alignSelf: "flex-start",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  bubbleText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#1F2937",
+  },
+  myBubbleText: {
+    color: "#FFFFFF",
+  },
+  bubbleTime: {
+    fontSize: 10,
+    color: "#94A3B8",
+    marginTop: 5,
+    alignSelf: "flex-end",
+  },
+  myBubbleTime: {
+    color: "rgba(255,255,255,0.75)",
+  },
+  composer: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    padding: 12,
+    gap: 10,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  composerInput: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 110,
+    borderRadius: 12,
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#111827",
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: "#0D9488",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

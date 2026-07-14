@@ -1,14 +1,31 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text, TouchableOpacity, View } from "react-native";
-import { avatars } from "./adminData";
 import { QueueItem } from "./AdminCards";
 import { colors, styles } from "./adminTheme";
 
-export default function DashboardOverview({ title }) {
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function formatMoney(value) {
+  return `BDT ${Number(value || 0).toLocaleString()}`;
+}
+
+export default function DashboardOverview({ title, analytics = {}, loading }) {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const revenueBars = analytics.monthlyRevenue?.length
+    ? analytics.monthlyRevenue
+    : Array.from({ length: 7 }, (_, index) => ({ label: index, value: 0 }));
+  const maxRevenue = Math.max(...revenueBars.map((item) => item.value || 0), 1);
+
   return (
     <View>
-      <Text style={styles.dateText}>Monday, October 23</Text>
-      <Text style={styles.pageTitle}>{title}</Text>
+      <Text style={styles.dateText}>{today}</Text>
+      <Text style={styles.pageTitle}>{loading ? "Loading dashboard..." : title}</Text>
 
       <View style={styles.bigMetricCard}>
         <MaterialCommunityIcons
@@ -17,8 +34,10 @@ export default function DashboardOverview({ title }) {
           color={colors.teal}
         />
         <Text style={styles.metricLabel}>Total Listings</Text>
-        <Text style={styles.metricValue}>1,284</Text>
-        <Text style={styles.growthText}>+12% from last month</Text>
+        <Text style={styles.metricValue}>{formatNumber(analytics.totalListings)}</Text>
+        <Text style={styles.growthText}>
+          {formatNumber(analytics.pendingListings)} pending, {formatNumber(analytics.flaggedListings)} flagged
+        </Text>
       </View>
 
       <View style={styles.metricGrid}>
@@ -29,7 +48,7 @@ export default function DashboardOverview({ title }) {
             color={colors.teal}
           />
           <Text style={styles.metricLabel}>Active Users</Text>
-          <Text style={styles.smallMetricValue}>8,432</Text>
+          <Text style={styles.smallMetricValue}>{formatNumber(analytics.activeUsers)}</Text>
         </View>
         <View style={[styles.smallMetricCard, styles.pendingCard]}>
           <MaterialCommunityIcons
@@ -38,7 +57,7 @@ export default function DashboardOverview({ title }) {
             color={colors.ink}
           />
           <Text style={styles.metricLabel}>Pending NID</Text>
-          <Text style={styles.smallMetricValue}>42</Text>
+          <Text style={styles.smallMetricValue}>{formatNumber(analytics.pendingNid)}</Text>
         </View>
       </View>
 
@@ -51,16 +70,16 @@ export default function DashboardOverview({ title }) {
       </View>
 
       <View style={styles.revenueCard}>
-        <Text style={styles.revenueLabel}>Total Revenue (OCT)</Text>
-        <Text style={styles.revenueValue}>{"\u09f3 842,500"}</Text>
+        <Text style={styles.revenueLabel}>Total Revenue</Text>
+        <Text style={styles.revenueValue}>{formatMoney(analytics.totalRevenue)}</Text>
         <View style={styles.chart}>
-          {[34, 48, 58, 50, 68, 82, 91].map((height, index) => (
+          {revenueBars.map((item, index) => (
             <View
-              key={height + index}
+              key={`${item.label}-${index}`}
               style={[
                 styles.chartBar,
                 {
-                  height,
+                  height: 18 + Math.round(((item.value || 0) / maxRevenue) * 74),
                   opacity: 0.36 + index * 0.09,
                 },
               ]}
@@ -72,16 +91,18 @@ export default function DashboardOverview({ title }) {
       <Text style={[styles.sectionTitle, styles.queueTitle]}>
         Verification Queue
       </Text>
-      <QueueItem
-        avatar={avatars.tanvir}
-        name="Tanvir Ahmed"
-        detail="Host Verification Requested"
-      />
-      <QueueItem
-        avatar={avatars.maliha}
-        name="Maliha Khan"
-        detail="Listing #492 Review Pending"
-      />
+      {analytics.verificationQueue?.length ? (
+        analytics.verificationQueue.map((item) => (
+          <QueueItem
+            key={`${item.type}-${item.id}`}
+            avatar={item.avatar}
+            name={item.name}
+            detail={item.detail}
+          />
+        ))
+      ) : (
+        <Text style={styles.dateText}>No pending verification items.</Text>
+      )}
     </View>
   );
 }

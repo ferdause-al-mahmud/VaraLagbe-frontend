@@ -1,4 +1,28 @@
 import { Stack } from "expo-router";
+// Safely stringify console outputs to avoid LogBox render crashes
+if (typeof global !== "undefined" && typeof console !== "undefined") {
+  const levels = ["log", "info", "warn", "error", "debug"];
+  levels.forEach((lvl) => {
+    const original = console[lvl] && console[lvl].bind(console);
+    if (!original) return;
+    console[lvl] = (...args) => {
+      try {
+        const safe = args.map((a) => {
+          if (typeof a === "string") return a;
+          if (a && a.$$typeof) return "[React Element]";
+          try {
+            return typeof a === "object" ? JSON.stringify(a) : String(a);
+          } catch (_e) {
+            return String(a);
+          }
+        });
+        original(...safe);
+      } catch (e) {
+        original("[console wrapper error]", String(e));
+      }
+    };
+  });
+}
 import Toast from "react-native-toast-message";
 import { Colors } from "./constants/colors";
 import { useColorScheme } from "./hooks/useColorScheme";
@@ -86,6 +110,14 @@ export default function RootLayout() {
             animationEnabled: true,
           }}
         />
+        <Stack.Screen
+          name="admin-profile"
+          options={{
+            headerShown: false,
+            animationEnabled: true,
+          }}
+        />
+
         <Stack.Screen
           name="admin-dashboard"
           options={{

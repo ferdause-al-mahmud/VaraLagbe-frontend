@@ -11,17 +11,12 @@ import {
   View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import useColorScheme from "../hooks/useColorScheme";
-import { getAuthSession } from "../utils/authSession";
+import { getAuthSession, getAuthUserId } from "../utils/authSession";
 import { showToast } from "../utils/toast";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 export default function OwnerDashboardScreen() {
   const router = useRouter();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-
   const [properties, setProperties] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalAssets, setTotalAssets] = useState(0);
@@ -31,15 +26,14 @@ export default function OwnerDashboardScreen() {
     setIsLoading(true);
     try {
       const session = getAuthSession();
+      const ownerId = getAuthUserId();
 
-      if (!session?.token || !session?.user?._id) {
+      if (!session?.token || !ownerId) {
         showToast("Error", "Authentication required", "error");
         router.replace("/login");
         setIsLoading(false);
         return;
       }
-
-      const ownerId = session.user._id;
 
       const response = await fetch(
         `${API_BASE_URL}/api/properties?owner_id=${ownerId}`,
@@ -61,8 +55,10 @@ export default function OwnerDashboardScreen() {
       setTotalAssets(ownerProperties.length);
 
       // Count active properties (availability)
-      const active = ownerProperties.filter(
-        (prop) => prop.availability === "available",
+      const active = ownerProperties.filter((prop) =>
+        ["available", "available now", "available soon"].includes(
+          String(prop.availability).toLowerCase(),
+        ),
       ).length;
       setActiveProperties(active);
     } catch (error) {
@@ -87,9 +83,17 @@ export default function OwnerDashboardScreen() {
       location: `${property.location?.area}, ${property.location?.city}`,
       rent: `৳${property.price?.monthly_rent?.toLocaleString() || 0}`,
       type: `${property.specs?.bedrooms || 0} BHK`,
-      status: property.availability === "available" ? "AVAILABLE" : "OCCUPIED",
-      active: property.availability === "available",
-      image: require("../../assets/images/gulshan.jpg"), // Default image - can be updated to use property.images[0]
+      status: ["available", "available now", "available soon"].includes(
+        String(property.availability).toLowerCase(),
+      )
+        ? "AVAILABLE"
+        : "OCCUPIED",
+      active: ["available", "available now", "available soon"].includes(
+        String(property.availability).toLowerCase(),
+      ),
+      image: property.images?.[0]
+        ? { uri: property.images[0] }
+        : require("../../assets/images/gulshan.jpg"),
     };
   };
   return (

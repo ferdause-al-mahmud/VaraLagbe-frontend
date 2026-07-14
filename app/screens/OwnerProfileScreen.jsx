@@ -9,14 +9,12 @@ import {
   View,
 } from "react-native";
 import { ThemedView } from "../components/ThemedView";
-import useColorScheme from "../hooks/useColorScheme";
 import {
   clearAuthSession,
   getAuthSession,
   setAuthSession,
 } from "../utils/authSession";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 const REVIEWS = [
   {
@@ -123,10 +121,6 @@ export default function OwnerProfileScreen() {
   const propertyCount = getPropertyCount(owner);
   const ownerRating = getOwnerRating(owner);
   const verificationStatus = getVerificationStatus(owner);
-  const colorScheme = useColorScheme();
-
-  const isDark = colorScheme === "dark";
-
   const loadOwnerProfile = useCallback(async () => {
     const session = getAuthSession();
 

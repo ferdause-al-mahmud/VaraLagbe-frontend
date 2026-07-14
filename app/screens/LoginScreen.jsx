@@ -14,9 +14,8 @@ import {
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
-import { setAuthSession } from "../utils/authSession";
-
-const API_BASE_URL = "http://localhost:5000";
+import { getRoleHomePath, setAuthSession } from "../utils/authSession";
+import { API_BASE_URL } from "../config/api";
 
 function showMessage(title, message) {
   if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -93,8 +92,8 @@ export default function LoginScreen() {
         user: data.user,
       });
 
-      router.replace("/tabs/home");
-    } catch (error) {
+      router.replace(getRoleHomePath(data.user?.role));
+    } catch (_error) {
       showMessage(
         "Connection Problem",
         "We could not reach the server. Please check your internet or backend connection and try again.",

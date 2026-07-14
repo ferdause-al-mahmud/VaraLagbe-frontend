@@ -1,0 +1,2 @@
+// Centralized API base URL for Android emulator testing
+export const API_BASE_URL = 'http://10.0.2.2:5000';

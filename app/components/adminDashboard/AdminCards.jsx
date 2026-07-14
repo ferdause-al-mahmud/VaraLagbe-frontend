@@ -2,10 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { colors, styles } from "./adminTheme";
 
+function avatarFor(name, image) {
+  if (image) return image;
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "VL")}&background=006878&color=fff`;
+}
+
 export function QueueItem({ avatar, name, detail }) {
   return (
     <TouchableOpacity style={styles.queueItem} activeOpacity={0.75}>
-      <Image source={{ uri: avatar }} style={styles.queueAvatar} />
+      <Image source={{ uri: avatarFor(name, avatar) }} style={styles.queueAvatar} />
       <View style={styles.queueText}>
         <Text style={styles.queueName}>{name}</Text>
         <Text style={styles.queueDetail}>{detail}</Text>
@@ -15,7 +20,7 @@ export function QueueItem({ avatar, name, detail }) {
   );
 }
 
-export function ListingCard({ listing }) {
+export function ListingCard({ listing, onAction }) {
   const isFlagged = listing.status === "FLAGGED";
   const isLive = listing.status === "LIVE";
   const isPending = listing.status === "PENDING REVIEW";
@@ -23,7 +28,7 @@ export function ListingCard({ listing }) {
   return (
     <View style={styles.listingCard}>
       <View style={styles.listingTop}>
-        <Image source={{ uri: listing.image }} style={styles.listingImage} />
+        <Image source={{ uri: avatarFor(listing.title, listing.image) }} style={styles.listingImage} />
         <View style={styles.listingBody}>
           <View
             style={[
@@ -63,6 +68,7 @@ export function ListingCard({ listing }) {
             icon="trash-outline"
             tone="danger"
             flex={1.05}
+            onPress={() => onAction?.(listing.id, "remove")}
           />
         )}
         {isPending && (
@@ -71,6 +77,7 @@ export function ListingCard({ listing }) {
             icon="checkmark-circle-outline"
             tone="primary"
             flex={2.3}
+            onPress={() => onAction?.(listing.id, "approve")}
           />
         )}
         {!isPending && (
@@ -79,6 +86,7 @@ export function ListingCard({ listing }) {
             icon="pencil-outline"
             tone="neutral"
             flex={1}
+            onPress={() => onAction?.(listing.id, isLive ? "flag" : "approve")}
           />
         )}
         {isLive && (
@@ -87,6 +95,7 @@ export function ListingCard({ listing }) {
             icon="flag-outline"
             tone="neutral"
             flex={1}
+            onPress={() => onAction?.(listing.id, "flag")}
           />
         )}
         {!isLive && (
@@ -96,6 +105,7 @@ export function ListingCard({ listing }) {
               isFlagged ? styles.iconActionPrimary : styles.iconActionNeutral,
             ]}
             activeOpacity={0.75}
+            onPress={() => onAction?.(listing.id, isFlagged ? "approve" : "approve")}
           >
             <Ionicons
               name={isFlagged ? "checkmark-circle" : "eye-outline"}
@@ -109,13 +119,13 @@ export function ListingCard({ listing }) {
   );
 }
 
-export function UserCard({ user }) {
+export function UserCard({ user, onAction }) {
   const verified = user.status === "VERIFIED";
 
   return (
     <View style={styles.userCard}>
       <View style={styles.userHeader}>
-        <Image source={{ uri: user.avatar }} style={styles.userAvatar} />
+        <Image source={{ uri: avatarFor(user.name, user.avatar) }} style={styles.userAvatar} />
         <View style={styles.userTitleWrap}>
           <Text style={styles.userName}>{user.name}</Text>
           <View style={styles.userRoleRow}>
@@ -156,16 +166,24 @@ export function UserCard({ user }) {
         )}
       </View>
 
-      {user.id === 3 ? (
+      {verified ? (
         <TouchableOpacity style={styles.profileButton} activeOpacity={0.75}>
           <Text style={styles.profileButtonText}>View Profile Details</Text>
         </TouchableOpacity>
       ) : (
         <View style={styles.userActions}>
-          <TouchableOpacity style={styles.rejectButton} activeOpacity={0.75}>
+          <TouchableOpacity
+            style={styles.rejectButton}
+            activeOpacity={0.75}
+            onPress={() => onAction?.(user.id, "reject")}
+          >
             <Text style={styles.rejectText}>Reject</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.approveButton} activeOpacity={0.75}>
+          <TouchableOpacity
+            style={styles.approveButton}
+            activeOpacity={0.75}
+            onPress={() => onAction?.(user.id, "approve")}
+          >
             <Text style={styles.approveText}>Approve</Text>
           </TouchableOpacity>
         </View>
@@ -174,7 +192,7 @@ export function UserCard({ user }) {
   );
 }
 
-function ActionButton({ label, icon, tone, flex = 1 }) {
+function ActionButton({ label, icon, tone, flex = 1, onPress }) {
   return (
     <TouchableOpacity
       style={[
@@ -185,6 +203,7 @@ function ActionButton({ label, icon, tone, flex = 1 }) {
         { flex },
       ]}
       activeOpacity={0.75}
+      onPress={onPress}
     >
       <Ionicons
         name={icon}

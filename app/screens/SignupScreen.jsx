@@ -14,8 +14,7 @@ import {
 import { ThemedView } from "../components/ThemedView";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 const ACCOUNT_ROLES = [
   {
@@ -43,7 +42,10 @@ function showMessage(title, message) {
 
 function getSignupErrorMessage(status, backendMessage) {
   if (status === 409) {
-    return backendMessage || "An account with this email or phone number already exists.";
+    return (
+      backendMessage ||
+      "An account with this email or phone number already exists."
+    );
   }
 
   if (status === 400) {
@@ -71,7 +73,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
-  const [nidFile, setNidFile] = useState(null);
+  const [nidFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
@@ -86,7 +88,10 @@ export default function SignupScreen() {
     }
 
     if (password.length < 8) {
-      showMessage("Validation Error", "Password must be at least 8 characters.");
+      showMessage(
+        "Validation Error",
+        "Password must be at least 8 characters.",
+      );
       return;
     }
 
@@ -144,7 +149,7 @@ export default function SignupScreen() {
       }
 
       router.replace("/login");
-    } catch (error) {
+    } catch (_error) {
       showMessage(
         "Connection Problem",
         "We could not reach the server. Please check your internet or backend connection and try again.",
@@ -179,7 +184,9 @@ export default function SignupScreen() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Create Account
           </Text>
-          <Text style={[styles.brandTitle, { color: colors.tint }]}>VaraLagbe</Text>
+          <Text style={[styles.brandTitle, { color: colors.tint }]}>
+            VaraLagbe
+          </Text>
         </View>
 
         <View style={styles.welcomeSection}>
@@ -195,7 +202,9 @@ export default function SignupScreen() {
               color={colors.tint}
             />
           </View>
-          <Text style={[styles.welcomeTitle, { color: colors.text }]}>Join Us Today</Text>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            Join Us Today
+          </Text>
           <Text style={[styles.welcomeSubtitle, { color: colors.text }]}>
             Create your account to access premium property rental services in
             Bangladesh.
@@ -209,7 +218,9 @@ export default function SignupScreen() {
           ]}
         >
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Full Name
+            </Text>
             <View
               style={[
                 styles.inputContainer,
@@ -236,7 +247,9 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Email Address</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Email Address
+            </Text>
             <View
               style={[
                 styles.inputContainer,
@@ -265,7 +278,9 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Phone Number</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Phone Number
+            </Text>
             <View
               style={[
                 styles.inputContainer,
@@ -293,7 +308,9 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Account Type</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Account Type
+            </Text>
             <View style={styles.roleOptions}>
               {ACCOUNT_ROLES.map((accountRole) => {
                 const isSelected = role === accountRole.value;
@@ -390,7 +407,9 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.formGroup}>
-            <Text style={[styles.label, { color: colors.text }]}>Confirm Password</Text>
+            <Text style={[styles.label, { color: colors.text }]}>
+              Confirm Password
+            </Text>
             <View
               style={[
                 styles.inputContainer,
@@ -515,7 +534,7 @@ export default function SignupScreen() {
             </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}> 
+          <Text style={[styles.orText, { color: colors.text, opacity: 0.5 }]}>
             OR LOGIN INSTEAD
           </Text>
 
@@ -530,7 +549,9 @@ export default function SignupScreen() {
             ]}
             onPress={handleLogin}
           >
-            <Text style={[styles.loginButtonText, { color: colors.tint }]}>Login</Text>
+            <Text style={[styles.loginButtonText, { color: colors.tint }]}>
+              Login
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -541,11 +562,15 @@ export default function SignupScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>VERIFIED</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              VERIFIED
+            </Text>
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons name="lock" size={24} color={colors.tint} />
-            <Text style={[styles.badgeText, { color: colors.text }]}>SECURE</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              SECURE
+            </Text>
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons
@@ -553,7 +578,9 @@ export default function SignupScreen() {
               size={24}
               color={colors.tint}
             />
-            <Text style={[styles.badgeText, { color: colors.text }]}>24/7 CARE</Text>
+            <Text style={[styles.badgeText, { color: colors.text }]}>
+              24/7 CARE
+            </Text>
           </View>
         </View>
       </ScrollView>

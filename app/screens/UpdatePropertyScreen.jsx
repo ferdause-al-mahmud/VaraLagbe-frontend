@@ -2,20 +2,20 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { ThemedText } from "../components/ThemedText";
 import { ThemedView } from "../components/ThemedView";
 import { useColorScheme } from "../hooks/useColorScheme";
 import { getAuthSession, setAuthSession } from "../utils/authSession";
 import { showToast } from "../utils/toast";
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 export default function UpdatePropertyScreen() {
   const router = useRouter();
@@ -26,7 +26,6 @@ export default function UpdatePropertyScreen() {
   const [loading, setLoading] = useState(false);
   const [isLoadingProperty, setIsLoadingProperty] = useState(true);
   const [validationErrors, setValidationErrors] = useState({});
-  const [profile, setProfile] = useState(null);
   const [propertyData, setPropertyData] = useState({
     property_type: "",
     title: "",
@@ -83,7 +82,6 @@ export default function UpdatePropertyScreen() {
         return;
       }
 
-      setProfile(user);
       setAuthSession({ token: session.token, user });
     } catch (error) {
       showToast(

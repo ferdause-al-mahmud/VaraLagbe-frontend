@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -13,8 +13,7 @@ import Slider from "@react-native-community/slider";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../constants/colors";
 import { useColorScheme } from "../hooks/useColorScheme";
-
-const API_BASE_URL = "http://localhost:5000";
+import { API_BASE_URL } from "../config/api";
 
 // Default amenities with icons (fallback if API fails)
 const AMENITIES_MAP = {
@@ -71,25 +70,20 @@ export default function FilterModal({
   });
   const [loadingOptions, setLoadingOptions] = useState(true);
 
-  useEffect(() => {
-    fetchFilterOptions();
-  }, []);
-
-  const fetchFilterOptions = async () => {
+  const fetchFilterOptions = useCallback(async () => {
     try {
       setLoadingOptions(true);
       const response = await fetch(`${API_BASE_URL}/api/properties/options`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setFilterOptions({
+          setFilterOptions((currentOptions) => ({
             propertyTypes:
-              data.data.propertyTypes || filterOptions.propertyTypes,
-            amenities: data.data.amenities || filterOptions.amenities,
-            locations: data.data.locations || filterOptions.locations,
-            priceRange: data.data.priceRange || filterOptions.priceRange,
-          });
-          // Update price range with actual data
+              data.data.propertyTypes || currentOptions.propertyTypes,
+            amenities: data.data.amenities || currentOptions.amenities,
+            locations: data.data.locations || currentOptions.locations,
+            priceRange: data.data.priceRange || currentOptions.priceRange,
+          }));
           setPriceRange([
             initialFilters.minPrice || data.data.priceRange.min || 1000,
             initialFilters.maxPrice || data.data.priceRange.max || 100000,
@@ -98,11 +92,14 @@ export default function FilterModal({
       }
     } catch (err) {
       console.error("Error fetching filter options:", err);
-      // Use default options on error
     } finally {
       setLoadingOptions(false);
     }
-  };
+  }, [initialFilters.maxPrice, initialFilters.minPrice]);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
 
   const handlePriceChange = (value, index) => {
     const newRange = [...priceRange];

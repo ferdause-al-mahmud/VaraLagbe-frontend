@@ -1,22 +1,26 @@
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { listings } from "./adminData";
 import { ListingCard } from "./AdminCards";
 import { colors, styles } from "./adminTheme";
 
-const filters = ["All Items", "Live (124)", "Flagged (8)", "Pending"];
+const filters = [
+  { label: "All Items", value: "all" },
+  { label: "Live", value: "live" },
+  { label: "Flagged", value: "flagged" },
+  { label: "Pending", value: "pending" },
+];
 
-export default function ContentModeration() {
+export default function ContentModeration({ listings = [], activeFilter = "all", loading, onFilter, onSearch, onAction }) {
   return (
     <View>
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={18} color="#46565b" />
           <TextInput
-            editable={false}
             placeholder="Search property or owner..."
             placeholderTextColor="#8b989c"
             style={styles.searchInput}
+            onChangeText={onSearch}
           />
         </View>
         <TouchableOpacity style={styles.filterButton} activeOpacity={0.75}>
@@ -29,34 +33,44 @@ export default function ContentModeration() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterPills}
       >
-        {filters.map((filter, index) => (
-          <TouchableOpacity
-            key={filter}
-            style={[
-              styles.filterPill,
-              index === 0 && styles.filterPillActive,
-              index === 1 && styles.filterPillLive,
-              index === 2 && styles.filterPillFlagged,
-            ]}
-            activeOpacity={0.75}
-          >
-            <Text
+        {filters.map((filter, index) => {
+          const selected = activeFilter === filter.value;
+          return (
+            <TouchableOpacity
+              key={filter.value}
               style={[
-                styles.filterPillText,
-                index === 0 && styles.filterPillTextActive,
-                index === 1 && styles.filterPillTextLive,
-                index === 2 && styles.filterPillTextFlagged,
+                styles.filterPill,
+                selected && styles.filterPillActive,
+                !selected && index === 1 && styles.filterPillLive,
+                !selected && index === 2 && styles.filterPillFlagged,
               ]}
+              activeOpacity={0.75}
+              onPress={() => onFilter?.(filter.value)}
             >
-              {filter}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.filterPillText,
+                  selected && styles.filterPillTextActive,
+                  !selected && index === 1 && styles.filterPillTextLive,
+                  !selected && index === 2 && styles.filterPillTextFlagged,
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
-      {listings.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
-      ))}
+      {loading ? (
+        <Text style={styles.dateText}>Loading listings...</Text>
+      ) : listings.length ? (
+        listings.map((listing) => (
+          <ListingCard key={listing.id} listing={listing} onAction={onAction} />
+        ))
+      ) : (
+        <Text style={styles.dateText}>No listings found.</Text>
+      )}
     </View>
   );
 }

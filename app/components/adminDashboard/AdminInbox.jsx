@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { colors, styles as adminStyles } from "./adminTheme";
 
 const INBOX_MESSAGES = [
   {
@@ -291,3 +290,4 @@ const localStyles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
